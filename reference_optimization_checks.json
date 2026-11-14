@@ -1,0 +1,14 @@
+{
+  "checks_passed": [
+    "default_loss_and_gradients_match_reference",
+    "default_positive_weight_matches_reference",
+    "optimizer_lr_and_no_decay_groups",
+    "bucket_sampler_visits_every_review_once",
+    "tune_score_id_alignment",
+    "validation_scores_rejected_even_with_same_row_count",
+    "threshold_clean_separation"
+  ],
+  "full_finetuning_completed": false,
+  "new_F1_claimed": false,
+  "blind_file_read": false
+}

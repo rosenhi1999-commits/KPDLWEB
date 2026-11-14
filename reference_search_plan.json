@@ -1,0 +1,78 @@
+{
+  "reference_system_score": {
+    "value": 0.88,
+    "source": "user-reported system result, not independently checked"
+  },
+  "reference_validation_score": {
+    "value": 0.8852956070394071,
+    "source": "pasted report, saved encoder outputs, not reproduced"
+  },
+  "current_baseline_roles": "PhoBERT_lan3 is one joint encoder component, not the full five-source reference ensemble",
+  "trials": [
+    {
+      "folder": "PhoBERT_lan3",
+      "status": "prepared_not_trained"
+    },
+    {
+      "folder": "PhoBERT_lan4",
+      "status": "prepared_not_trained"
+    },
+    {
+      "folder": "PhoBERT_lan5",
+      "status": "prepared_not_trained"
+    },
+    {
+      "folder": "PhoBERT_lan6",
+      "status": "prepared_not_trained"
+    },
+    {
+      "folder": "PhoBERT_lan7",
+      "status": "prepared_not_trained"
+    },
+    {
+      "folder": "PhoBERT_lan8",
+      "status": "prepared_not_trained"
+    },
+    {
+      "folder": "PhoBERT_lan9",
+      "status": "prepared_not_trained"
+    },
+    {
+      "folder": "PhoBERT_lan10",
+      "status": "prepared_not_trained"
+    }
+  ],
+  "evaluation": {
+    "split_seed": 2026,
+    "inner_split_seed": 2027,
+    "fit_rows": 2812,
+    "tune_rows": 938,
+    "validation_rows": 938,
+    "test_blind_used": false
+  },
+  "meta_search": {
+    "C_candidates": [
+      0.001,
+      0.003,
+      0.01,
+      0.03,
+      0.1,
+      0.3,
+      1.0
+    ],
+    "feature_modes": [
+      "own_aspect",
+      "all_aspects"
+    ],
+    "cv_folds": 5,
+    "selection_only": "train-derived out-of-fit scores"
+  },
+  "calibration_search": [
+    "fixed",
+    "reference_grid",
+    "exact_pr",
+    "shrink25",
+    "shrink75"
+  ],
+  "new_full_finetuning_F1_available": false
+}

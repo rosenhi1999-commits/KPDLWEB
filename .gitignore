@@ -10,5 +10,7 @@ data/
 **/validation_predictions.csv
 **/submission.csv
 du_lieu_them.csv
+**/*.npz
+**/*.npy
 __pycache__/
 .venv/

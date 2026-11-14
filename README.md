@@ -1,5 +1,7 @@
 # KPDLWEB — ABSA tiếng Việt
 
+**Phân tích bài mẫu 0.88:** xem [REFERENCE_088_ANALYSIS.md](REFERENCE_088_ANALYSIS.md). Đã chuẩn bị 8 cấu hình full fine-tuning và công cụ hiệu chỉnh ngưỡng trên tune; đây là các lượt chưa huấn luyện, không cộng vào 46 kết quả đã đo dưới đây.
+
 Đã hoàn thành **46 lượt đo**, mỗi lượt trong thư mục PHUONGPHAP_lanN. Đợt mới chỉ dùng train.csv, không đọc hay dự đoán blind. Xem [báo cáo mới](TRAIN_ONLY_REPORT.md), [hướng dẫn tái hiện](TRAIN_ONLY_HUONG_DAN.md), [toàn bộ kết quả](all_experiments.csv) và [notebook đã chạy](submission.ipynb).
 
 ABSA-F1 tốt nhất split 42: **0.782002** (Ensemble_lan1); split nhóm 2026: **0.799716** (Stacking_lan1), tăng từ 0.757043 trên cùng validation. Đây là validation đã được xem trong quá trình phát triển, không phải điểm công khai/riêng tư. **Chưa đạt 0.96.**

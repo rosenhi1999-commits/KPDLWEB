@@ -7,6 +7,7 @@ import os
 os.environ.setdefault('CUBLAS_WORKSPACE_CONFIG', ':4096:8')
 os.environ.setdefault('TOKENIZERS_PARALLELISM', 'false')
 from pathlib import Path
+import train_only_guard
 ROOT=Path(__file__).resolve().parent
 os.environ.setdefault('HF_HOME',str(ROOT/'private_hf_cache'))
 import argparse,hashlib,json,math,platform,random,re,time,unicodedata
@@ -14,11 +15,12 @@ import numpy as np
 import pandas as pd
 import torch
 from torch import nn
-from torch.utils.data import Dataset,DataLoader
+from torch.utils.data import Dataset,DataLoader,Sampler
 from transformers import AutoConfig,AutoModel,AutoTokenizer,get_cosine_schedule_with_warmup
 from pyvi import ViTokenizer
 from absa_core import LABELS,reference_splits,binary_predictions,absa_f1
 from score_absa import report
+from reference_optimization import optimizer_for,positive_weights,supervised_loss
 
 def seed_all(seed):
     random.seed(seed);np.random.seed(seed);torch.manual_seed(seed)
@@ -52,16 +54,16 @@ class Collate:
         return self.tokenizer.pad(windows,padding=True,return_tensors='pt'),[len(c) for c,_ in batch],torch.tensor(np.asarray([y for _,y in batch]),dtype=torch.float32)
 
 class ReviewModel(nn.Module):
-    def __init__(self,name,revision,head='joint',unfreeze=-1):
+    def __init__(self,name,revision,head='joint',unfreeze=-1,dropout=.2):
         super().__init__();self.head_type=head
         cfg=AutoConfig.from_pretrained(name,revision=revision,trust_remote_code=False)
         self.encoder=AutoModel.from_pretrained(name,revision=revision,config=cfg,add_pooling_layer=False,trust_remote_code=False)
         hidden=cfg.hidden_size
         if head=='joint':
-            self.head=nn.Sequential(nn.Dropout(.2),nn.Linear(hidden,hidden),nn.Tanh(),nn.Dropout(.2),nn.Linear(hidden,21))
+            self.head=nn.Sequential(nn.Dropout(dropout),nn.Linear(hidden,hidden),nn.Tanh(),nn.Dropout(dropout),nn.Linear(hidden,21))
         else:
             self.queries=nn.Parameter(torch.randn(7,hidden)*.02)
-            self.head=nn.Sequential(nn.Dropout(.2),nn.Linear(hidden,3))
+            self.head=nn.Sequential(nn.Dropout(dropout),nn.Linear(hidden,3))
         if unfreeze>=0:
             layers=self.encoder.encoder.layer
             if unfreeze>len(layers):raise ValueError('Too many unfreeze layers')
@@ -80,7 +82,20 @@ class ReviewModel(nn.Module):
         # One review-level BCE target; never copy all labels to each window.
         return torch.stack([part.max(0).values for part in logits.split(counts)])
 
-def batches(ds,tok,size,shuffle=False,seed=2026):
+class ReviewBatchSampler(Sampler):
+    def __init__(self,ds,size,generator):
+        order=sorted(range(len(ds)),key=lambda i:max(len(w['input_ids']) for w in ds.items[i]))
+        self.groups=[order[i:i+size] for i in range(0,len(order),size)];self.generator=generator
+    def __len__(self):return len(self.groups)
+    def __iter__(self):
+        for k in torch.randperm(len(self.groups),generator=self.generator).tolist():
+            group=self.groups[k]
+            yield [group[i] for i in torch.randperm(len(group),generator=self.generator).tolist()]
+
+def batches(ds,tok,size,shuffle=False,seed=2026,bucket=False):
+    if shuffle and bucket:
+        generator=torch.Generator().manual_seed(seed)
+        return DataLoader(ds,batch_sampler=ReviewBatchSampler(ds,size,generator),collate_fn=Collate(tok),num_workers=0,generator=generator)
     return DataLoader(ds,batch_size=size,shuffle=shuffle,collate_fn=Collate(tok),num_workers=0,generator=torch.Generator().manual_seed(seed))
 
 @torch.no_grad()
@@ -106,32 +121,34 @@ def main():
     args=ap.parse_args();cfg=json.loads(args.config.read_text());out=args.config.parent
     if args.train.name!='train.csv':raise ValueError('Train-only runner')
     if not args.smoke and (out/'metrics.json').exists():raise FileExistsError('Create a new method_lanN directory for a new run')
-    seed_all(cfg.get('seed',2026));torch.set_num_threads(3)
+    training_seed=cfg.get('training_seed',cfg.get('seed',2026))
+    split_seed=cfg.get('split_seed',cfg.get('seed',2026))
+    seed_all(training_seed);torch.set_num_threads(cfg.get('cpu_threads',2))
     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if device.type=='cpu' and not args.smoke:raise RuntimeError('Full training needs a GPU in this runner; --smoke is supported on CPU')
     df=pd.read_csv(args.train);assert list(df.columns)==['id','text']+LABELS
     y=df[LABELS].to_numpy(int);assert np.isin(y,[0,1]).all()
-    fit,tune,valid=reference_splits(df,cfg.get('seed',2026))
+    fit,tune,valid=reference_splits(df,split_seed)
     tokenizer=AutoTokenizer.from_pretrained(cfg['model_name'],revision=cfg.get('revision'),use_fast=cfg.get('fast_tokenizer',False),trust_remote_code=False)
     idxs={'fit':fit[:4] if args.smoke else fit,'tune':tune,'validation':valid}
     datasets={n:Reviews(df.text.iloc[idx],y[idx],tokenizer,cfg['segment'],cfg.get('max_length',256),cfg.get('stride',64)) for n,idx in idxs.items() if not args.smoke or n=='fit'}
-    model=ReviewModel(cfg['model_name'],cfg.get('revision'),cfg.get('head','joint'),cfg.get('unfreeze_layers',-1)).to(device)
-    lr=cfg.get('lr',2e-5);encoder_params=list(model.encoder.parameters())
-    encoder_ids={id(p) for p in encoder_params}
-    opt=torch.optim.AdamW([{'params':[p for p in encoder_params if p.requires_grad],'lr':lr},
-        {'params':[p for p in model.parameters() if id(p) not in encoder_ids],'lr':lr*5}],weight_decay=.01)
-    loaders={n:batches(ds,tokenizer,cfg.get('batch_size',4),n=='fit') for n,ds in datasets.items()}
+    model=ReviewModel(cfg['model_name'],cfg.get('revision'),cfg.get('head','joint'),cfg.get('unfreeze_layers',-1),cfg.get('dropout',.2)).to(device)
+    opt=optimizer_for(model,cfg)
+    loaders={n:batches(ds,tokenizer,cfg.get('batch_size',4),n=='fit',training_seed,cfg.get('length_bucketing',False)) for n,ds in datasets.items()}
     if args.smoke:
         inputs,counts,labels=next(iter(loaders['fit']));start=time.perf_counter()
         logits=model({k:v.to(device) for k,v in inputs.items()},counts)
-        loss=nn.functional.binary_cross_entropy_with_logits(logits,labels.to(device));loss.backward();opt.step()
+        pw=positive_weights(y[fit],cfg,device)
+        loss=supervised_loss(logits,labels.to(device),pw,cfg);loss.backward();opt.step()
         assert logits.shape==(len(labels),21) and torch.isfinite(loss)
         result={'smoke_passed':True,'device':str(device),'seconds':time.perf_counter()-start,'loss':float(loss.detach()),'note':'Not a validation F1 experiment','blind_file_read':False}
         (out/'smoke.json').write_text(json.dumps(result,indent=2));print(json.dumps(result));return
     epochs=cfg.get('epochs',8);acc=cfg.get('accumulation',4)
     updates=math.ceil(len(loaders['fit'])/acc)*epochs
-    sched=get_cosine_schedule_with_warmup(opt,int(updates*.1),updates)
-    pw=torch.tensor(np.clip(np.sqrt((len(fit)-y[fit].sum(0))/np.maximum(1,y[fit].sum(0))),1,3),dtype=torch.float32,device=device)
+    warmup=float(cfg.get('warmup_ratio',.1))
+    if not 0<=warmup<1:raise ValueError('Invalid warmup_ratio')
+    sched=get_cosine_schedule_with_warmup(opt,int(updates*warmup),updates)
+    pw=positive_weights(y[fit],cfg,device)
     scaler=torch.amp.GradScaler('cuda');history=[];best=-1;best_epoch=0;start=time.perf_counter()
     for epoch in range(1,epochs+1):
         model.train()
@@ -140,18 +157,23 @@ def main():
         for step,(inputs,counts,labels) in enumerate(loaders['fit']):
             with torch.autocast('cuda',dtype=torch.float16):
                 logits=model({k:v.to(device) for k,v in inputs.items()},counts)
-                loss=nn.functional.binary_cross_entropy_with_logits(logits,labels.to(device),pos_weight=pw)
+                loss=supervised_loss(logits,labels.to(device),pw,cfg)
                 divisor=min(acc,len(loaders['fit'])-(step//acc)*acc)
             scaler.scale(loss/divisor).backward();total+=float(loss.detach())
             if (step+1)%acc==0 or step+1==len(loaders['fit']):
                 scaler.unscale_(opt);nn.utils.clip_grad_norm_(model.parameters(),1)
                 scaler.step(opt);scaler.update();sched.step();opt.zero_grad(set_to_none=True)
         logits=infer(model,loaders['tune'],device);thresholds=cuts(y[tune],logits)
-        f1=absa_f1(y[tune],binary_predictions(logits,thresholds))
-        history.append({'epoch':epoch,'loss':total/len(loaders['fit']),'tune_F1':f1});print(history[-1],flush=True)
+        tuned_f1=absa_f1(y[tune],binary_predictions(logits,thresholds))
+        fixed_f1=absa_f1(y[tune],binary_predictions(logits,np.zeros(21)))
+        policy=cfg.get('epoch_selection','tuned_threshold')
+        if policy not in ['tuned_threshold','fixed_threshold']:raise ValueError('Invalid epoch_selection')
+        f1=fixed_f1 if policy=='fixed_threshold' else tuned_f1
+        history.append({'epoch':epoch,'loss':total/len(loaders['fit']),'tune_F1':f1,'tune_F1_tuned_threshold':tuned_f1,'tune_F1_fixed_threshold':fixed_f1});print(history[-1],flush=True)
         if f1>best:
             best=f1;best_epoch=epoch
             torch.save({'state_dict':{k:v.detach().cpu() for k,v in model.state_dict().items()},'thresholds':thresholds.tolist()},out/'best.pt')
+            np.savez_compressed(out/'tune_scores.npz',scores=1/(1+np.exp(-np.clip(logits,-30,30))),ids=df.id.iloc[tune].to_numpy(dtype=str))
         if epoch-best_epoch>=cfg.get('patience',3):break
     saved=torch.load(out/'best.pt',map_location='cpu',weights_only=True);model.load_state_dict(saved['state_dict'])
     elapsed=time.perf_counter()-start;start=time.perf_counter();logits=infer(model,loaders['validation'],device)
@@ -164,7 +186,13 @@ def main():
         'blind_file_read':False,'production_refit':False,'validation_previously_seen':True})
     (out/'metrics.json').write_text(json.dumps(result,indent=2));pd.DataFrame(history).to_csv(out/'history.csv',index=False)
     cfg['status']='trained_validation_only'
+    cfg.update(columns=LABELS,architecture='joint_21' if cfg.get('head','joint')=='joint' else 'label_attention',production_refit=False)
+    cfg['thresholds']=(1/(1+np.exp(-np.asarray(saved['thresholds'])))).tolist()
+    cfg['threshold_space']='probability'
     args.config.write_text(json.dumps(cfg,indent=2))
+    torch.save({k:v.detach().cpu() for k,v in model.state_dict().items()},out/'model.pt')
+    np.savez_compressed(out/'validation_scores.npz',scores=1/(1+np.exp(-np.clip(logits,-30,30))),ids=gt.id.to_numpy(dtype=str))
+    (out/'run_info.json').write_text(json.dumps({'train_sha256':result['train_sha256'],'fit_rows':len(fit),'tune_rows':len(tune),'validation_rows':len(valid),'split_seed':split_seed,'training_seed':training_seed,'best_epoch':best_epoch,'best_tune_F1':best,'epoch_selection':cfg.get('epoch_selection','tuned_threshold'),'blind_file_read':False},indent=2))
     np.savez_compressed(out/'private_validation_scores.npz',scores=logits,ids=gt.id.to_numpy(dtype=str))
     sb.to_csv(out/'validation_predictions.csv',index=False);tokenizer.save_pretrained(out/'tokenizer')
     print(json.dumps(result,indent=2))
