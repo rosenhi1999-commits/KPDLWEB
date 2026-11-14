@@ -1,0 +1,142 @@
+name: Train ABSA from train only
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/train-absa.yml'
+      - 'TRAIN_ABSA_NOW'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: absa-train-only-main
+  cancel-in-progress: false
+
+env:
+  OPENBLAS_NUM_THREADS: '1'
+  OMP_NUM_THREADS: '4'
+  TOKENIZERS_PARALLELISM: 'false'
+  HF_HUB_DISABLE_XET: '1'
+  HF_HOME: .ci_hf_cache
+  PIP_CACHE_DIR: .ci_pip_cache
+
+jobs:
+  train:
+    name: Full fine-tune ${{ matrix.target }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - {source: PhoBERT_lan3, target: PhoBERT_lan11}
+          - {source: PhoBERT_lan4, target: PhoBERT_lan12}
+          - {source: PhoBERT_lan5, target: PhoBERT_lan13}
+          - {source: PhoBERT_lan6, target: PhoBERT_lan14}
+          - {source: PhoBERT_lan7, target: PhoBERT_lan15}
+          - {source: PhoBERT_lan8, target: PhoBERT_lan16}
+          - {source: PhoBERT_lan9, target: PhoBERT_lan17}
+          - {source: PhoBERT_lan10, target: PhoBERT_lan18}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install CPU training dependencies
+        run: |
+          python -m pip install torch==2.6.0+cpu --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r requirements-ci.txt
+      - name: Train every encoder layer, tune, then evaluate validation
+        run: python ci_train.py --source '${{ matrix.source }}' --target '${{ matrix.target }}'
+      - name: Preserve original trained checkpoint in repository cache
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: private_ci_runs/${{ matrix.target }}/model.pt
+          key: absa-trained-${{ github.run_id }}-${{ matrix.target }}
+      - name: Save metrics and source probabilities, without review text or original data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: absa-${{ matrix.target }}-metrics
+          path: public_results/${{ matrix.target }}/
+          if-no-files-found: warn
+          retention-days: 7
+
+  collect:
+    name: Compare results and train stacking
+    needs: train
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+    outputs:
+      selected: ${{ steps.collect.outputs.selected }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: absa-*-metrics
+          path: downloaded_metrics
+      - name: Install evaluation dependencies
+        run: python -m pip install numpy==2.3.5 pandas==2.2.3 scipy==1.17.0 scikit-learn==1.8.0 joblib==1.5.3 iterative-stratification==0.1.9
+      - name: Fit meta model using tune only and publish measured results
+        id: collect
+        run: python ci_collect.py --artifacts downloaded_metrics --commit
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: absa-meta-and-comparison
+          path: |
+            ci_meta/
+            ci_training_comparison.csv
+            CI_TRAINING_REPORT.md
+            ci_selected_run.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  package:
+    name: Preserve and verify the selected encoder
+    needs: collect
+    if: needs.collect.outputs.selected != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: absa-${{ needs.collect.outputs.selected }}-metrics
+          path: package_metadata
+      - uses: actions/cache/restore@v4
+        with:
+          path: private_ci_runs/${{ needs.collect.outputs.selected }}/model.pt
+          key: absa-trained-${{ github.run_id }}-${{ needs.collect.outputs.selected }}
+          fail-on-cache-miss: true
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install torch==2.6.0+cpu --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r requirements-ci.txt
+      - name: Store compact weights and measure their actual validation score
+        run: python ci_package_best.py --metadata package_metadata --model private_ci_runs/${{ needs.collect.outputs.selected }}/model.pt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: absa-selected-encoder
+          path: best_model/
+          retention-days: 7
+          compression-level: 6

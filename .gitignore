@@ -12,5 +12,12 @@ data/
 du_lieu_them.csv
 **/*.npz
 **/*.npy
+.ci_hf_cache/
+.ci_pip_cache/
+public_results/
+downloaded_metrics/
+package_metadata/
+best_model/
+ci_meta/
 __pycache__/
 .venv/
