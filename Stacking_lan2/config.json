@@ -1,0 +1,165 @@
+{
+  "sources": [
+    "PhoBERT_lan11",
+    "PhoBERT_lan12",
+    "PhoBERT_lan13",
+    "PhoBERT_lan14",
+    "PhoBERT_lan15",
+    "PhoBERT_lan16",
+    "PhoBERT_lan17",
+    "PhoBERT_lan18"
+  ],
+  "labels": [
+    {
+      "label": "nhan_vien_nhac",
+      "mode": "all",
+      "C": 0.1,
+      "threshold": 0.4,
+      "meta_OOF_F1": 0.9683860232945092
+    },
+    {
+      "label": "nhan_vien_khen",
+      "mode": "own",
+      "C": 1,
+      "threshold": 0.30000000000000004,
+      "meta_OOF_F1": 0.9739478957915831
+    },
+    {
+      "label": "nhan_vien_che",
+      "mode": "own",
+      "C": 0.3,
+      "threshold": 0.5,
+      "meta_OOF_F1": 0.8347107438016529
+    },
+    {
+      "label": "sach_se_nhac",
+      "mode": "all",
+      "C": 0.03,
+      "threshold": 0.4,
+      "meta_OOF_F1": 0.9717948717948718
+    },
+    {
+      "label": "sach_se_khen",
+      "mode": "own",
+      "C": 0.1,
+      "threshold": 0.55,
+      "meta_OOF_F1": 0.9901639344262295
+    },
+    {
+      "label": "sach_se_che",
+      "mode": "all",
+      "C": 0.1,
+      "threshold": 0.5,
+      "meta_OOF_F1": 0.891566265060241
+    },
+    {
+      "label": "vi_tri_nhac",
+      "mode": "own",
+      "C": 1,
+      "threshold": 0.55,
+      "meta_OOF_F1": 0.9632892804698973
+    },
+    {
+      "label": "vi_tri_khen",
+      "mode": "own",
+      "C": 0.3,
+      "threshold": 0.5,
+      "meta_OOF_F1": 0.9572368421052632
+    },
+    {
+      "label": "vi_tri_che",
+      "mode": "all",
+      "C": 0.03,
+      "threshold": 0.35,
+      "meta_OOF_F1": 0.7216494845360825
+    },
+    {
+      "label": "phong_nhac",
+      "mode": "own",
+      "C": 0.1,
+      "threshold": 0.6,
+      "meta_OOF_F1": 0.9394240317775571
+    },
+    {
+      "label": "phong_khen",
+      "mode": "own",
+      "C": 1,
+      "threshold": 0.5,
+      "meta_OOF_F1": 0.9260450160771704
+    },
+    {
+      "label": "phong_che",
+      "mode": "all",
+      "C": 1,
+      "threshold": 0.4,
+      "meta_OOF_F1": 0.8905109489051095
+    },
+    {
+      "label": "gia_tri_nhac",
+      "mode": "all",
+      "C": 0.3,
+      "threshold": 0.30000000000000004,
+      "meta_OOF_F1": 0.9135802469135802
+    },
+    {
+      "label": "gia_tri_khen",
+      "mode": "all",
+      "C": 0.3,
+      "threshold": 0.55,
+      "meta_OOF_F1": 0.9051724137931034
+    },
+    {
+      "label": "gia_tri_che",
+      "mode": "all",
+      "C": 1,
+      "threshold": 0.45000000000000007,
+      "meta_OOF_F1": 0.675
+    },
+    {
+      "label": "an_uong_nhac",
+      "mode": "own",
+      "C": 0.003,
+      "threshold": 0.85,
+      "meta_OOF_F1": 0.9653846153846154
+    },
+    {
+      "label": "an_uong_khen",
+      "mode": "all",
+      "C": 1,
+      "threshold": 0.45000000000000007,
+      "meta_OOF_F1": 0.953757225433526
+    },
+    {
+      "label": "an_uong_che",
+      "mode": "all",
+      "C": 1,
+      "threshold": 0.25,
+      "meta_OOF_F1": 0.9244444444444444
+    },
+    {
+      "label": "tien_nghi_nhac",
+      "mode": "own",
+      "C": 0.1,
+      "threshold": 0.5,
+      "meta_OOF_F1": 0.8660194174757282
+    },
+    {
+      "label": "tien_nghi_khen",
+      "mode": "all",
+      "C": 1,
+      "threshold": 0.35,
+      "meta_OOF_F1": 0.7774086378737541
+    },
+    {
+      "label": "tien_nghi_che",
+      "mode": "own",
+      "C": 0.1,
+      "threshold": 0.5,
+      "meta_OOF_F1": 0.8
+    }
+  ],
+  "seed": 2026,
+  "split_policy": "reference_group_2026",
+  "selection": "meta C, feature mode and thresholds selected on tune OOF only",
+  "blind_file_read": false
+}

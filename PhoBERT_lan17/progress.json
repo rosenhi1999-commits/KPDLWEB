@@ -1,0 +1,10 @@
+{
+  "epoch": 8,
+  "batch": 703,
+  "batches": 703,
+  "mean_loss": 0.1278245308718632,
+  "elapsed_seconds": 2104.4334997039996,
+  "device": "cpu",
+  "cpu_bf16": true,
+  "blind_file_read": false
+}
