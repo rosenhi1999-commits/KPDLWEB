@@ -1,0 +1,26 @@
+{
+  "seed": 42,
+  "train_rows": 3750,
+  "validation_rows": 938,
+  "ABSA_F1": 0.7610986938540686,
+  "precision_macro": 0.8126412190697332,
+  "recall_macro": 0.7196058793189318,
+  "accuracy_mean_per_label": 0.9281145293938471,
+  "train_seconds": 4.481939309999973,
+  "per_label_f1": {
+    "nhan_vien_khen": 0.9232456140350878,
+    "nhan_vien_che": 0.6822429906542056,
+    "sach_se_khen": 0.9587628865979382,
+    "sach_se_che": 0.7209302325581395,
+    "vi_tri_khen": 0.8896210873146623,
+    "vi_tri_che": 0.6842105263157895,
+    "phong_khen": 0.7948303715670436,
+    "phong_che": 0.7951807228915663,
+    "gia_tri_khen": 0.8301886792452831,
+    "gia_tri_che": 0.5813953488372093,
+    "an_uong_khen": 0.8318042813455657,
+    "an_uong_che": 0.7729083665338645,
+    "tien_nghi_khen": 0.6060606060606061,
+    "tien_nghi_che": 0.584
+  }
+}
