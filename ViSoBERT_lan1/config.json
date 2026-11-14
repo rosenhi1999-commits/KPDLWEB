@@ -1,0 +1,17 @@
+{
+  "model_name": "uitnlp/visobert",
+  "revision": "196a62afad9cbe4f52a54aabad828b13f0eec59a",
+  "seed": 2026,
+  "segment": false,
+  "max_length": 256,
+  "stride": 64,
+  "head": "joint",
+  "unfreeze_layers": -1,
+  "batch_size": 2,
+  "accumulation": 8,
+  "lr": 2e-05,
+  "epochs": 8,
+  "patience": 3,
+  "status": "prepared_not_trained",
+  "fast_tokenizer": true
+}

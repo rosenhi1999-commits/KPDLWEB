@@ -1,0 +1,8 @@
+{
+  "members": [
+    "TFIDF_lan14",
+    "NBSVM_lan3",
+    "TFIDF_lan13"
+  ],
+  "vote_threshold": 0.5
+}

@@ -1,0 +1,10 @@
+{
+  "fit_rows": 4688,
+  "train_sha256": "665b581d11c5cb59eb5b3e6e730660fdd28567c64392f2e288e375dd082bd95e",
+  "seconds": 7.082918113999995,
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "model": "final_model.joblib",
+  "test_file_read": false,
+  "thresholds_source": "inner tune; no blind labels or outer validation optimization"
+}

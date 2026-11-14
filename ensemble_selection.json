@@ -1,0 +1,8 @@
+{
+  "selected_by": "inner_tune_ABSA_F1_only",
+  "members": [
+    "NBSVM_lan2",
+    "NBSVM_lan1",
+    "TFIDF_lan11"
+  ]
+}

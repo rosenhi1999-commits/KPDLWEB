@@ -1,0 +1,13 @@
+train.csv
+test_blind.csv
+data/
+**/*.joblib
+**/*.pt
+**/*.pth
+**/*.safetensors
+**/private_*
+**/split.csv
+**/validation_predictions.csv
+**/submission.csv
+__pycache__/
+.venv/

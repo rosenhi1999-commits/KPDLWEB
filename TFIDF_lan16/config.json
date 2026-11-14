@@ -1,0 +1,6 @@
+{
+  "kind": "logistic",
+  "C": 16,
+  "normalization": "base",
+  "split_policy": "reference_group_2026"
+}

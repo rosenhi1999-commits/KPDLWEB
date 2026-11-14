@@ -1,0 +1,5 @@
+{
+  "kind": "logistic",
+  "C": 4,
+  "normalization": "base"
+}

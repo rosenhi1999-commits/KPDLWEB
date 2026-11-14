@@ -1,0 +1,8 @@
+{
+  "smoke_passed": true,
+  "device": "cpu",
+  "seconds": 4.639535334000129,
+  "loss": 0.7053126096725464,
+  "note": "Not a validation F1 experiment",
+  "blind_file_read": false
+}

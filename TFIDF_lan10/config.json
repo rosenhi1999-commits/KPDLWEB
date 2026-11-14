@@ -1,0 +1,7 @@
+{
+  "kind": "svm",
+  "C": 1,
+  "word": false,
+  "char_analyzer": "char_wb",
+  "normalization": "base"
+}

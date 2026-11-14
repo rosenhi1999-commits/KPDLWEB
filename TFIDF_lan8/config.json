@@ -1,0 +1,5 @@
+{
+  "kind": "svm",
+  "C": 4,
+  "normalization": "base"
+}

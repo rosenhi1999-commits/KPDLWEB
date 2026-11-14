@@ -1,0 +1,6 @@
+{
+  "kind": "svm",
+  "C": 1,
+  "normalization": "lexical",
+  "split_policy": "reference_group_2026"
+}
