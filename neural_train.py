@@ -154,7 +154,7 @@ def main():
     if not 0<=warmup<1:raise ValueError('Invalid warmup_ratio')
     sched=get_cosine_schedule_with_warmup(opt,int(updates*warmup),updates)
     pw=positive_weights(y[fit],cfg,device)
-    scaler=torch.amp.GradScaler('cuda',enabled=device.type=='cuda');history=[];best=-1;best_epoch=0;start=time.perf_counter()
+    scaler=torch.amp.GradScaler('cuda',enabled=device.type=='cuda');history=[];best=-1;best_tuned_f1=-1;best_epoch=0;start=time.perf_counter()
     stop_reason='max_epochs'
     for epoch in range(1,epochs+1):
         model.train()
@@ -185,7 +185,7 @@ def main():
         history.append({'epoch':epoch,'loss':total/len(loaders['fit']),'tune_F1':f1,'tune_F1_tuned_threshold':tuned_f1,'tune_F1_fixed_threshold':fixed_f1});print(history[-1],flush=True)
         pd.DataFrame(history).to_csv(out/'history.csv',index=False)
         if f1>best:
-            best=f1;best_epoch=epoch
+            best=f1;best_tuned_f1=tuned_f1;best_epoch=epoch
             torch.save({'state_dict':{k:v.detach().cpu() for k,v in model.state_dict().items()},'thresholds':thresholds.tolist()},out/'best.pt')
             np.savez_compressed(out/'tune_scores.npz',scores=1/(1+np.exp(-np.clip(logits,-30,30))),ids=df.id.iloc[tune].to_numpy(dtype=str))
         if epoch-best_epoch>=cfg.get('patience',3):
@@ -196,7 +196,7 @@ def main():
     elapsed=time.perf_counter()-start;start=time.perf_counter();logits=infer(model,loaders['validation'],device)
     seconds=time.perf_counter()-start;pred=binary_predictions(logits,np.asarray(saved['thresholds']))
     gt=df.iloc[valid][['id']+LABELS].reset_index(drop=True);sb=pd.DataFrame(pred,columns=LABELS);sb.insert(0,'id',gt.id)
-    result=report(gt,sb,n_boot=1000);result.update({'best_epoch':best_epoch,'best_tune_F1':best,
+    result=report(gt,sb,n_boot=1000);result.update({'best_epoch':best_epoch,'best_tune_F1':best_tuned_f1,'best_epoch_selection_F1':best,
         'train_seconds':elapsed,'validation_inference_seconds':seconds,'train_sha256':hashlib.sha256(args.train.read_bytes()).hexdigest(),
         'torch':torch.__version__,'transformers':__import__('transformers').__version__,'python':platform.python_version(),
         'device':str(device),'cpu_bf16':model.autocast_cpu_bf16,
@@ -213,7 +213,7 @@ def main():
     args.config.write_text(json.dumps(cfg,indent=2))
     torch.save({k:v.detach().cpu() for k,v in model.state_dict().items()},out/'model.pt')
     np.savez_compressed(out/'validation_scores.npz',scores=1/(1+np.exp(-np.clip(logits,-30,30))),ids=gt.id.to_numpy(dtype=str))
-    (out/'run_info.json').write_text(json.dumps({'train_sha256':result['train_sha256'],'fit_rows':len(fit),'tune_rows':len(tune),'validation_rows':len(valid),'split_seed':split_seed,'training_seed':training_seed,'best_epoch':best_epoch,'best_tune_F1':best,'epoch_selection':cfg.get('epoch_selection','tuned_threshold'),'blind_file_read':False},indent=2))
+    (out/'run_info.json').write_text(json.dumps({'train_sha256':result['train_sha256'],'fit_rows':len(fit),'tune_rows':len(tune),'validation_rows':len(valid),'split_seed':split_seed,'training_seed':training_seed,'best_epoch':best_epoch,'best_tune_F1':best_tuned_f1,'best_epoch_selection_F1':best,'epoch_selection':cfg.get('epoch_selection','tuned_threshold'),'blind_file_read':False},indent=2))
     np.savez_compressed(out/'private_validation_scores.npz',scores=logits,ids=gt.id.to_numpy(dtype=str))
     sb.to_csv(out/'validation_predictions.csv',index=False);tokenizer.save_pretrained(out/'tokenizer')
     print(json.dumps(result,indent=2))

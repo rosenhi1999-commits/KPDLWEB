@@ -15,6 +15,14 @@ from score_absa import report
 ROOT=Path(__file__).resolve().parent
 SAFE_FILES=['config.json','metrics.json','history.csv','run_info.json','progress.json','ci_provenance.json']
 
+def comparable_tune_score(path,metrics):
+    # Older workers called the fixed-threshold epoch-selection score best_tune_F1.
+    # Compare all candidates by tuned F1 at their already-selected checkpoint.
+    history=pd.read_csv(path/'history.csv')
+    row=history.loc[history.epoch==metrics['best_epoch']]
+    if len(row)!=1:raise ValueError('Selected epoch missing from source history')
+    return float(row['tune_F1_tuned_threshold'].iloc[0])
+
 def design(sources,j,mode):
     idx=list(range(21)) if mode=='all' else list(range((j//3)*3,(j//3+1)*3))
     return np.concatenate([np.log(np.clip(s[:,idx],1e-5,1-1e-5)/(1-np.clip(s[:,idx],1e-5,1-1e-5))) for s in sources],axis=1)
@@ -67,13 +75,13 @@ if __name__=='__main__':
         for f in SAFE_FILES:
             if (path/f).exists():shutil.copy2(path/f,folder/f);files.append(f'{name}/{f}')
         trials.append((name,path,m))
-    winner=max(trials,key=lambda t:t[2]['best_tune_F1']) if trials else None
+    winner=max(trials,key=lambda t:comparable_tune_score(t[1],t[2])) if trials else None
     stacked=None
     if len(trials)>=2:stacked,extra=stack(trials,train);files+=extra
-    rows=[{'experiment':n,'best_tune_F1':m['best_tune_F1'],'ABSA_F1':m['ABSA_F1'],'epochs_completed':m['epochs_completed']} for n,_,m in trials]
+    rows=[{'experiment':n,'selected_checkpoint_tuned_F1':comparable_tune_score(path,m),'ABSA_F1':m['ABSA_F1'],'epochs_completed':m['epochs_completed']} for n,path,m in trials]
     if stacked:rows.append({'experiment':'Stacking_lan2','ABSA_F1':stacked['ABSA_F1']})
     pd.DataFrame(rows).to_csv(ROOT/'ci_training_comparison.csv',index=False);files.append('ci_training_comparison.csv')
-    selection={'selected_encoder':winner[0] if winner else None,'selected_by':'best_tune_F1, never outer validation',
+    selection={'selected_encoder':winner[0] if winner else None,'selected_by':'tuned F1 at the selected checkpoint, never outer validation',
         'completed_encoder_trials':len(trials),'github_run_id':os.environ.get('GITHUB_RUN_ID'),
         'blind_file_read':False,'stacking_ABSA_F1':stacked['ABSA_F1'] if stacked else None}
     (ROOT/'ci_selected_run.json').write_text(json.dumps(selection,indent=2));files.append('ci_selected_run.json')

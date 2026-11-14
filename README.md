@@ -2,6 +2,8 @@
 
 **Tự chạy trên GitHub:** [CI_AUTORUN.md](CI_AUTORUN.md) mô tả workflow full fine-tuning 8 cấu hình và tự tổng hợp/stacking. Kết quả mới chỉ được tính khi job huấn luyện hoàn tất; không dùng smoke test làm F1.
 
+Lượt tự động đầu tiên đã được kích hoạt: [GitHub Actions run 43590132635](https://github.com/rosenhi1999-commits/KPDLWEB/actions/runs/43590132635). Xem trạng thái trực tiếp ở liên kết; kết quả hoàn tất sẽ có CI_TRAINING_REPORT.md.
+
 **Phân tích bài mẫu 0.88:** xem [REFERENCE_088_ANALYSIS.md](REFERENCE_088_ANALYSIS.md). Đã chuẩn bị 8 cấu hình full fine-tuning và công cụ hiệu chỉnh ngưỡng trên tune; đây là các lượt chưa huấn luyện, không cộng vào 46 kết quả đã đo dưới đây.
 
 Đã hoàn thành **46 lượt đo**, mỗi lượt trong thư mục PHUONGPHAP_lanN. Đợt mới chỉ dùng train.csv, không đọc hay dự đoán blind. Xem [báo cáo mới](TRAIN_ONLY_REPORT.md), [hướng dẫn tái hiện](TRAIN_ONLY_HUONG_DAN.md), [toàn bộ kết quả](all_experiments.csv) và [notebook đã chạy](submission.ipynb).

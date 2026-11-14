@@ -8,7 +8,7 @@ Workflow: `.github/workflows/train-absa.yml`. Việc thêm workflow vào main s�
 2. CPU được phép huấn luyện thật. Dùng BF16 nếu máy có avx512_bf16/amx_bf16; nếu không dùng FP32. Giữ learning rate/loss theo cấu hình ablation đã định. Mỗi job có timeout 355 phút; trainer dừng ở ranh giới epoch sau ngân sách 18000 giây và ghi chính xác số epoch đã hoàn thành.
 3. Lưu checkpoint FP32 vào cache của run, artifact nhỏ gồm chỉ số và xác suất theo ID, không có review text hoặc dữ liệu gốc. Các checkpoint cache có thể bị GitHub thu hồi theo chính sách cache; không phải kho model vĩnh viễn.
 4. Khi các job kết thúc, tự tổng hợp kết quả thành CI_TRAINING_REPORT.md, ci_training_comparison.csv và các metrics/config/history trong repo. Nếu có ít nhất 2 nguồn hoàn thành, fit Stacking_lan2 trên tune OOF, sau đó chấm cùng validation từ train.
-5. Chọn encoder đóng gói bằng best_tune_F1, không chọn theo outer validation. Đóng gói checkpoint dưới dạng float16 để giảm dung lượng, load lại vào model float32 và chấm lại validation; lưu chỉ số sau làm tròn trọng số cùng artifact `absa-selected-encoder`. Artifact giữ 7 ngày. Không giả định điểm checkpoint nén bằng điểm trước nén.
+5. Chọn encoder đóng gói bằng F1 tune sau hiệu chỉnh tại checkpoint đã chọn, không chọn theo outer validation. Collector đọc đúng cột tune_F1_tuned_threshold trong history để không so nhầm điểm ngưỡng cố định của lan17 với điểm đã hiệu chỉnh của các lượt khác. Đóng gói checkpoint dưới dạng float16 để giảm dung lượng, load lại vào model float32 và chấm lại validation; lưu chỉ số sau làm tròn trọng số cùng artifact `absa-selected-encoder`. Artifact giữ 7 ngày. Không giả định điểm checkpoint nén bằng điểm trước nén.
 
 ## Dữ liệu và cách đọc kết quả
 
@@ -21,3 +21,5 @@ Chỉ train.csv được dùng. Audit guard chặn mở CSV có tên blind. Tác
 Mở tab Actions → Train ABSA from train only → từng job Full fine-tune PhoBERT_lanN. Trainer ghi tiến độ mỗi 25 batch và F1 tune sau mỗi epoch. Sau cùng đọc CI_TRAINING_REPORT.md trong main và các artifacts của run. Artifact có model không chứa train.csv/test_blind.csv; pipeline không upload checkpoint optimizer lớn vào artifact.
 
 Các lần trước đã chạy trên workspace CPU và đẩy kết quả lên repo; chúng không phải GitHub Actions. Workflow này mới là cơ chế GitHub tự thực thi và ghi kết quả.
+
+Lượt đầu tiên: https://github.com/rosenhi1999-commits/KPDLWEB/actions/runs/43590132635 . Nếu muốn chạy trực tiếp trên máy CPU riêng, có thể dùng `python run_reference_trials.py --runs PhoBERT_lan3 --allow-cpu`; không còn cần GPU để cho phép huấn luyện.
