@@ -1,0 +1,8 @@
+{
+  "selection_run_id": "43590132635",
+  "selection_source": "PhoBERT_lan14",
+  "selection_config_sha256": "ffd7d375776c18be0a6299f933f6df9340631a0323de263f8e01cf1f818a2b53",
+  "tune_scores_sha256": "1b6353a1fbd7510e400a9433a5ce44d6fd40e62bac612e60e4568a625ade96b4",
+  "tune_scores_are_from_pre_refit_model": true,
+  "new_model_tune_scores_generated": false
+}

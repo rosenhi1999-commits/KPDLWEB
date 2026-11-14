@@ -1,0 +1,185 @@
+{
+  "sources": [
+    "PhoBERT_lan11",
+    "PhoBERT_lan12",
+    "PhoBERT_lan13",
+    "PhoBERT_lan14",
+    "PhoBERT_lan15",
+    "PhoBERT_lan16",
+    "PhoBERT_lan17",
+    "PhoBERT_lan18",
+    "PhoBERT_lan19",
+    "PhoBERT_lan20",
+    "PhoBERT_lan21",
+    "PhoBERT_lan22",
+    "ViSoBERT_lan2"
+  ],
+  "labels": [
+    {
+      "label": "nhan_vien_nhac",
+      "mode": "own",
+      "C": 0.003,
+      "threshold": 0.15000000000000002,
+      "meta_OOF_F1": 0.9681112019623875
+    },
+    {
+      "label": "nhan_vien_khen",
+      "mode": "own",
+      "C": 0.3,
+      "threshold": 0.35,
+      "meta_OOF_F1": 0.9748743718592965
+    },
+    {
+      "label": "nhan_vien_che",
+      "mode": "all",
+      "C": 0.3,
+      "threshold": 0.5,
+      "meta_OOF_F1": 0.8535564853556485
+    },
+    {
+      "label": "sach_se_nhac",
+      "mode": "all",
+      "C": 0.1,
+      "threshold": 0.5,
+      "meta_OOF_F1": 0.9742268041237113
+    },
+    {
+      "label": "sach_se_khen",
+      "mode": "own",
+      "C": 0.03,
+      "threshold": 0.75,
+      "meta_OOF_F1": 0.9917898193760263
+    },
+    {
+      "label": "sach_se_che",
+      "mode": "all",
+      "C": 0.03,
+      "threshold": 0.6,
+      "meta_OOF_F1": 0.9058823529411765
+    },
+    {
+      "label": "vi_tri_nhac",
+      "mode": "all",
+      "C": 0.003,
+      "threshold": 0.7000000000000001,
+      "meta_OOF_F1": 0.961764705882353
+    },
+    {
+      "label": "vi_tri_khen",
+      "mode": "own",
+      "C": 0.1,
+      "threshold": 0.8,
+      "meta_OOF_F1": 0.9609507640067911
+    },
+    {
+      "label": "vi_tri_che",
+      "mode": "own",
+      "C": 0.01,
+      "threshold": 0.6,
+      "meta_OOF_F1": 0.7380952380952381
+    },
+    {
+      "label": "phong_nhac",
+      "mode": "own",
+      "C": 0.3,
+      "threshold": 0.5,
+      "meta_OOF_F1": 0.9421000981354269
+    },
+    {
+      "label": "phong_khen",
+      "mode": "all",
+      "C": 0.03,
+      "threshold": 0.5,
+      "meta_OOF_F1": 0.9314194577352473
+    },
+    {
+      "label": "phong_che",
+      "mode": "own",
+      "C": 0.3,
+      "threshold": 0.55,
+      "meta_OOF_F1": 0.9070208728652751
+    },
+    {
+      "label": "gia_tri_nhac",
+      "mode": "all",
+      "C": 0.1,
+      "threshold": 0.4,
+      "meta_OOF_F1": 0.9102167182662538
+    },
+    {
+      "label": "gia_tri_khen",
+      "mode": "own",
+      "C": 0.01,
+      "threshold": 0.8,
+      "meta_OOF_F1": 0.9224137931034483
+    },
+    {
+      "label": "gia_tri_che",
+      "mode": "all",
+      "C": 0.1,
+      "threshold": 0.4,
+      "meta_OOF_F1": 0.7586206896551724
+    },
+    {
+      "label": "an_uong_nhac",
+      "mode": "all",
+      "C": 0.003,
+      "threshold": 0.75,
+      "meta_OOF_F1": 0.9606003752345216
+    },
+    {
+      "label": "an_uong_khen",
+      "mode": "all",
+      "C": 0.3,
+      "threshold": 0.75,
+      "meta_OOF_F1": 0.9614243323442137
+    },
+    {
+      "label": "an_uong_che",
+      "mode": "all",
+      "C": 0.01,
+      "threshold": 0.6,
+      "meta_OOF_F1": 0.9369369369369369
+    },
+    {
+      "label": "tien_nghi_nhac",
+      "mode": "own",
+      "C": 0.3,
+      "threshold": 0.6,
+      "meta_OOF_F1": 0.8588709677419355
+    },
+    {
+      "label": "tien_nghi_khen",
+      "mode": "own",
+      "C": 0.03,
+      "threshold": 0.55,
+      "meta_OOF_F1": 0.7959183673469388
+    },
+    {
+      "label": "tien_nghi_che",
+      "mode": "own",
+      "C": 0.3,
+      "threshold": 0.30000000000000004,
+      "meta_OOF_F1": 0.8592592592592593
+    }
+  ],
+  "seed": 2026,
+  "split_policy": "reference_group_2026",
+  "source_tune_provenance": {
+    "PhoBERT_lan11": "same_selection_encoder_out_of_fit",
+    "PhoBERT_lan12": "same_selection_encoder_out_of_fit",
+    "PhoBERT_lan13": "same_selection_encoder_out_of_fit",
+    "PhoBERT_lan14": "same_selection_encoder_out_of_fit",
+    "PhoBERT_lan15": "same_selection_encoder_out_of_fit",
+    "PhoBERT_lan16": "same_selection_encoder_out_of_fit",
+    "PhoBERT_lan17": "same_selection_encoder_out_of_fit",
+    "PhoBERT_lan18": "same_selection_encoder_out_of_fit",
+    "PhoBERT_lan19": "same_selection_encoder_out_of_fit",
+    "PhoBERT_lan20": "same_selection_encoder_out_of_fit",
+    "PhoBERT_lan21": "same_selection_encoder_out_of_fit",
+    "PhoBERT_lan22": "pre_refit_selection_encoder_out_of_fit",
+    "ViSoBERT_lan2": "same_selection_encoder_out_of_fit"
+  },
+  "selection": "meta C, feature mode and thresholds selected on tune OOF only",
+  "blind_file_read": false
+}

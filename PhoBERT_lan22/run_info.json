@@ -1,0 +1,6 @@
+{
+  "train_sha256": "665b581d11c5cb59eb5b3e6e730660fdd28567c64392f2e288e375dd082bd95e",
+  "fit_rows": 3750,
+  "refit_scope": "outer80",
+  "blind_file_read": false
+}

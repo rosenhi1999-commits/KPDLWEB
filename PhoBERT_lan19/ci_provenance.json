@@ -1,0 +1,10 @@
+{
+  "experiment": "PhoBERT_lan19",
+  "source_configuration": "PhoBERT_lan19",
+  "training_code_sha": "0d26f2f873c5edeee00a9b42414b17cc203f30f7",
+  "github_run_id": "43614693254",
+  "train_sha256": "665b581d11c5cb59eb5b3e6e730660fdd28567c64392f2e288e375dd082bd95e",
+  "neural_train_sha256": "cd3ea560325ab3c1e2047505ae61c414f02da554af17ba087450f70ef6ea31b2",
+  "full_encoder_trainable": true,
+  "blind_file_read": false
+}

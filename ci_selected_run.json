@@ -1,8 +1,11 @@
 {
-  "selected_encoder": "PhoBERT_lan14",
-  "selected_by": "tuned F1 at the selected checkpoint, never outer validation",
-  "completed_encoder_trials": 8,
-  "github_run_id": "43590132635",
+  "selected_encoder": "PhoBERT_lan20",
+  "selected_by": "selection-source tuned F1; ties prefer more fit rows, never outer validation",
+  "completed_encoder_trials": 13,
+  "github_run_id": "43614693254",
+  "current_run_completed": 5,
+  "carried_forward_sources": 8,
   "blind_file_read": false,
-  "stacking_ABSA_F1": 0.8604688229390477
+  "stacking_ABSA_F1": 0.8726591996948133,
+  "stacking_experiment": "Stacking_lan3"
 }
