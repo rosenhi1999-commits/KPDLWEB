@@ -1,0 +1,8 @@
+{
+  "kind": "logistic",
+  "C": 4,
+  "residual_weight": 0,
+  "global_weight": 0.5,
+  "split_policy": "reference_group_2026",
+  "blind_file_read": false
+}

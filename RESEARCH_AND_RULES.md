@@ -1,5 +1,7 @@
 # Phương pháp, nguồn và giới hạn đánh giá
 
+**Cập nhật đợt mới:** đã đo 46 lượt; tốt nhất trên split 2026 là Stacking_lan1, ABSA-F1 0.799716. Đã thử RDR và dữ liệu tổng hợp. Xem [TRAIN_ONLY_REPORT.md](TRAIN_ONLY_REPORT.md); các con số 24 lượt và trạng thái chưa đo RDR bên dưới là lịch sử của đợt trước.
+
 ## Định dạng và điểm chính
 
 Đã đọc submission_demo.csv (732 dòng, 22 cột) và score_absa.py của repo. File nộp có id và 21 nhãn 0/1. Score xếp hạng là macro F1 của 14 nhãn khen/chê; accuracy không phải mục tiêu. Báo cáo tham khảo của người dùng là F1 0.885296, CI95% [0.871441,0.898356]; accuracy 0.963 không có nghĩa đạt ABSA-F1 0.96. Báo cáo đó tái tính từ saved encoder outputs, không huấn luyện lại encoder.

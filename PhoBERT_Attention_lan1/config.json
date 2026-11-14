@@ -1,0 +1,10 @@
+{
+  "hybrid": false,
+  "dropout": 0.2,
+  "lr": 0.002,
+  "encoder_frozen": true,
+  "max_epochs": 24,
+  "patience": 5,
+  "split_policy": "reference_group_2026",
+  "blind_file_read": false
+}

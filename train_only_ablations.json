@@ -1,0 +1,32 @@
+[
+  {
+    "A": "AugmentScoped_lan1",
+    "B": "ScopedTFIDF_lan5",
+    "delta_ABSA_F1": 0.007088720731945997,
+    "CI95_delta": [
+      -0.003368588060028285,
+      0.018483327732833944
+    ],
+    "bootstrap_probability_positive": 0.907
+  },
+  {
+    "A": "AugmentScoped_lan2",
+    "B": "ScopedTFIDF_lan4",
+    "delta_ABSA_F1": -0.008165737997113842,
+    "CI95_delta": [
+      -0.014974866165641466,
+      -0.000984661545815935
+    ],
+    "bootstrap_probability_positive": 0.011
+  },
+  {
+    "A": "PhoBERT_RDR_lan2",
+    "B": "PhoBERT_TFIDF_lan2",
+    "delta_ABSA_F1": -0.006286904088256051,
+    "CI95_delta": [
+      -0.016402697774098866,
+      0.0032808787086382194
+    ],
+    "bootstrap_probability_positive": 0.107
+  }
+]

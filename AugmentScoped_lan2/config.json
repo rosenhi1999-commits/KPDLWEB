@@ -1,0 +1,11 @@
+{
+  "kind": "logistic",
+  "C": 4,
+  "scope_weight": 1,
+  "split_policy": "reference_group_2026",
+  "augmentation_rows": 640,
+  "augmentation_file": "du_lieu_them.csv",
+  "provenance_file": "augmentation_provenance.json",
+  "baseline": "ScopedTFIDF_lan4",
+  "blind_file_read": false
+}

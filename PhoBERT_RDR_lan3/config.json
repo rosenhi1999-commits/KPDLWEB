@@ -1,0 +1,11 @@
+{
+  "kind": "svm",
+  "C": 1,
+  "embedding_weight": 0.5,
+  "with_tfidf": true,
+  "encoder_frozen": true,
+  "split_policy": "reference_group_2026",
+  "normalization": "lexical",
+  "embedding_normalization": "rdr, preserve case",
+  "blind_file_read": false
+}

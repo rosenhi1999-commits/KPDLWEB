@@ -1,5 +1,7 @@
 # Chạy lại thí nghiệm và chuẩn bị nộp
 
+**Cập nhật:** yêu cầu hiện tại chỉ dùng train. Dùng [TRAIN_ONLY_HUONG_DAN.md](TRAIN_ONLY_HUONG_DAN.md) và [TRAIN_ONLY_REPORT.md](TRAIN_ONLY_REPORT.md). Các bước xuất blind dưới đây là tài liệu lịch sử, không được chạy trong đợt train-only. Notebook đã được thay bằng bản train-only không có suy luận blind.
+
 Python đã dùng: **3.12.14**, Linux x86_64, 3 CPU logic, RAM hệ thống khoảng 9.5 GiB, không GPU. Các phép tính sparse dùng OPENBLAS_NUM_THREADS=1 và OMP_NUM_THREADS=1. Torch kiểm tra trên CPU là 2.6.0+cpu.
 
 ## 1. Môi trường và dữ liệu cục bộ

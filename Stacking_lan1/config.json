@@ -1,0 +1,173 @@
+{
+  "sources": [
+    "ScopedTFIDF_lan1",
+    "ScopedTFIDF_lan4",
+    "ScopedTFIDF_lan5",
+    "NBSVM_lan3",
+    "PhoBERT_Attention_lan1",
+    "PhoBERT_Attention_lan2"
+  ],
+  "split_policy": "reference_group_2026",
+  "meta_cv_folds": 5,
+  "candidate_C": [
+    0.01,
+    0.1,
+    1
+  ],
+  "feature_modes": [
+    "own",
+    "all"
+  ],
+  "blind_file_read": false,
+  "neural_head_checkpoint_selected_on_tune": true,
+  "fully_nested_encoder_cv": false,
+  "labels": [
+    {
+      "label": "nhan_vien_nhac",
+      "C": 1,
+      "mode": "own",
+      "threshold": -0.7893094395362681,
+      "meta_OOF_F1": 0.9586092715231788
+    },
+    {
+      "label": "nhan_vien_khen",
+      "C": 0.1,
+      "mode": "all",
+      "threshold": -0.4731404968240513,
+      "meta_OOF_F1": 0.9564336372847011
+    },
+    {
+      "label": "nhan_vien_che",
+      "C": 0.01,
+      "mode": "own",
+      "threshold": 0.23581232069608332,
+      "meta_OOF_F1": 0.8215767634854771
+    },
+    {
+      "label": "sach_se_nhac",
+      "C": 0.1,
+      "mode": "own",
+      "threshold": 0.0,
+      "meta_OOF_F1": 0.9661458333333334
+    },
+    {
+      "label": "sach_se_khen",
+      "C": 0.1,
+      "mode": "own",
+      "threshold": 0.0,
+      "meta_OOF_F1": 0.9835526315789473
+    },
+    {
+      "label": "sach_se_che",
+      "C": 1,
+      "mode": "all",
+      "threshold": 0.0,
+      "meta_OOF_F1": 0.8711656441717791
+    },
+    {
+      "label": "vi_tri_nhac",
+      "C": 0.01,
+      "mode": "all",
+      "threshold": -0.21489488625517053,
+      "meta_OOF_F1": 0.9290882778581766
+    },
+    {
+      "label": "vi_tri_khen",
+      "C": 0.1,
+      "mode": "own",
+      "threshold": 0.0,
+      "meta_OOF_F1": 0.927487352445194
+    },
+    {
+      "label": "vi_tri_che",
+      "C": 0.01,
+      "mode": "own",
+      "threshold": -0.2944065840284114,
+      "meta_OOF_F1": 0.6170212765957447
+    },
+    {
+      "label": "phong_nhac",
+      "C": 0.01,
+      "mode": "own",
+      "threshold": 0.0,
+      "meta_OOF_F1": 0.9179030662710188
+    },
+    {
+      "label": "phong_khen",
+      "C": 0.01,
+      "mode": "all",
+      "threshold": 0.31631456237566624,
+      "meta_OOF_F1": 0.8820678513731826
+    },
+    {
+      "label": "phong_che",
+      "C": 0.01,
+      "mode": "own",
+      "threshold": 0.0,
+      "meta_OOF_F1": 0.8436363636363636
+    },
+    {
+      "label": "gia_tri_nhac",
+      "C": 0.1,
+      "mode": "own",
+      "threshold": 0.0,
+      "meta_OOF_F1": 0.8789808917197452
+    },
+    {
+      "label": "gia_tri_khen",
+      "C": 0.1,
+      "mode": "all",
+      "threshold": -0.15222214304642318,
+      "meta_OOF_F1": 0.8793103448275862
+    },
+    {
+      "label": "gia_tri_che",
+      "C": 0.01,
+      "mode": "own",
+      "threshold": -0.2251867871046416,
+      "meta_OOF_F1": 0.6888888888888889
+    },
+    {
+      "label": "an_uong_nhac",
+      "C": 0.1,
+      "mode": "own",
+      "threshold": 0.6967896015183622,
+      "meta_OOF_F1": 0.9382239382239382
+    },
+    {
+      "label": "an_uong_khen",
+      "C": 1,
+      "mode": "all",
+      "threshold": 0.36155563400433893,
+      "meta_OOF_F1": 0.8955223880597015
+    },
+    {
+      "label": "an_uong_che",
+      "C": 1,
+      "mode": "own",
+      "threshold": 0.0,
+      "meta_OOF_F1": 0.8374384236453202
+    },
+    {
+      "label": "tien_nghi_nhac",
+      "C": 0.01,
+      "mode": "all",
+      "threshold": 0.4560226441279833,
+      "meta_OOF_F1": 0.8211382113821138
+    },
+    {
+      "label": "tien_nghi_khen",
+      "C": 0.1,
+      "mode": "all",
+      "threshold": -0.26489441870963104,
+      "meta_OOF_F1": 0.6947368421052632
+    },
+    {
+      "label": "tien_nghi_che",
+      "C": 0.01,
+      "mode": "all",
+      "threshold": 0.0,
+      "meta_OOF_F1": 0.7326007326007326
+    }
+  ]
+}

@@ -9,5 +9,6 @@ data/
 **/split.csv
 **/validation_predictions.csv
 **/submission.csv
+du_lieu_them.csv
 __pycache__/
 .venv/

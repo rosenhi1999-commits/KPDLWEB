@@ -1,0 +1,11 @@
+{
+  "kind": "logistic",
+  "C": 4,
+  "embedding_weight": 1,
+  "with_tfidf": false,
+  "encoder_frozen": true,
+  "split_policy": "reference_group_2026",
+  "normalization": "lexical",
+  "embedding_normalization": "rdr, preserve case",
+  "blind_file_read": false
+}

@@ -1,0 +1,12 @@
+{
+  "comparison": "Stacking_lan1 minus NBSVM_lan3, identical reference validation",
+  "ABSA_F1_delta": 0.042673104367526804,
+  "bootstrap_probability_delta_positive": 1.0,
+  "CI95_delta": [
+    0.028763677831664874,
+    0.05750068473947192
+  ],
+  "bootstrap_repetitions": 1000,
+  "validation_feedback_seen": true,
+  "blind_file_read": false
+}

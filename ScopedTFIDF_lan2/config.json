@@ -1,0 +1,8 @@
+{
+  "kind": "svm",
+  "C": 1,
+  "scope_weight": 1,
+  "split_policy": "reference_group_2026",
+  "label_method": "supervised",
+  "blind_file_read": false
+}

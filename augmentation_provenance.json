@@ -1,0 +1,13 @@
+{
+  "file_to_include_in_final_zip": "du_lieu_them.csv",
+  "local_file": "du_lieu_them.csv",
+  "rows": 640,
+  "seed": 2026,
+  "tool": "ChatGPT/Codex authored templates and labels; Python deterministic combinations; no external labeling API",
+  "user_prompt": "do k được dùng file test_blind á nên chạy làm sao cho được 0.96 đi bạn tôi tiền xử lý dữ kiệu, phobert tfidf mà được trên 0.9 đó. tìm cách đi",
+  "construction_spec": "Create novel Vietnamese review clauses for the assignment seven aspects; label mention/praise/complaint including mild complaint, temporary acceptance and improvement requests. Combine clauses deterministically. Never use blind text or original review retrieval.",
+  "labels": "Manually specified by the assistant for synthetic templates; unions when combining clauses",
+  "source_texts": "New templates in generate_train_augmentation.py, not copied class reviews",
+  "blind_file_read": false,
+  "sha256": "10d53ce8c262710a98a7b5b337b88fcf509c48ddbfb3c1cc358d510af9b7c3b4"
+}

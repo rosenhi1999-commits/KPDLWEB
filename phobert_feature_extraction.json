@@ -1,0 +1,17 @@
+{
+  "model_name": "vinai/phobert-base-v2",
+  "revision": "86cd7fd4c148980922ac11a2cf5e257f2ba639e1",
+  "train_sha256": "665b581d11c5cb59eb5b3e6e730660fdd28567c64392f2e288e375dd082bd95e",
+  "rows": 4688,
+  "windows": 4725,
+  "feature_dim": 2304,
+  "seconds": 134.432425127,
+  "encoder_frozen": true,
+  "supervised_encoder_finetuning": false,
+  "quantization": "dynamic_int8_linear",
+  "torch": "2.6.0+cpu",
+  "threads": 2,
+  "pooling": "last_CLS + last_masked_mean + last4_masked_mean; max over windows",
+  "blind_file_read": false,
+  "label_access_during_extraction": false
+}

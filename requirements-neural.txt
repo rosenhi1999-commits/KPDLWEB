@@ -5,3 +5,5 @@ sentencepiece==0.2.0
 huggingface-hub==0.36.2
 tokenizers==0.21.4
 safetensors==0.8.0
+py_vncorenlp==0.1.4
+pyjnius==1.9.0
