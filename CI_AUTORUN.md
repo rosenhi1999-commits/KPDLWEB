@@ -2,6 +2,8 @@
 
 Workflow: `.github/workflows/train-absa.yml`. Việc thêm workflow vào main sẽ kích hoạt lượt chạy đầu tiên. Có thể chạy lại bằng Run workflow trong tab Actions; các kết quả cũ vẫn có provenance run ID riêng. Workflow không dùng GPU hoặc larger runner; dùng standard ubuntu-24.04. [GitHub xác nhận standard runner miễn phí trên repo public](https://docs.github.com/en/actions/concepts/billing-and-usage).
 
+**Cập nhật vòng 2:** vòng 1 đã hoàn tất 8 lượt, stacking đạt 0.860469. Matrix hiện chạy 5 lượt mới ở PhoBERT_lan19..22 và ViSoBERT_lan2, thêm label attention, ViSoBERT và refit outer80. Collector tải lại 8 nguồn cũ từ run 43590132635 và cấp thư mục stacking mới. Chi tiết trong CI_PHASE1_ANALYSIS.md; mô tả 8 cấu hình dưới đây là vòng 1.
+
 ## Những việc tự chạy
 
 1. Chạy 8 cấu hình full encoder fine-tuning, tối đa 2 job song song. PhoBERT_lan3..10 là các cấu hình chuẩn bị; kết quả thật được ghi ở PhoBERT_lan11..18 tương ứng. Batch hiệu dụng 16 review, tối đa 8 epoch, early stop theo tune.

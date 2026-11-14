@@ -2,7 +2,7 @@
 
 **Tự chạy trên GitHub:** [CI_AUTORUN.md](CI_AUTORUN.md) mô tả workflow full fine-tuning 8 cấu hình và tự tổng hợp/stacking. Kết quả mới chỉ được tính khi job huấn luyện hoàn tất; không dùng smoke test làm F1.
 
-Lượt tự động đầu tiên đã được kích hoạt: [GitHub Actions run 43590132635](https://github.com/rosenhi1999-commits/KPDLWEB/actions/runs/43590132635). Xem trạng thái trực tiếp ở liên kết; kết quả hoàn tất sẽ có CI_TRAINING_REPORT.md.
+Lượt đầu tiên đã hoàn tất thành công: [GitHub Actions run 43590132635](https://github.com/rosenhi1999-commits/KPDLWEB/actions/runs/43590132635). **Stacking_lan2 đạt validation ABSA-F1 0.860469**; encoder tốt nhất PhoBERT_lan14 đạt 0.854359. Xem [phân tích và vòng 2](CI_PHASE1_ANALYSIS.md). Chưa đạt 0.96.
 
 **Phân tích bài mẫu 0.88:** xem [REFERENCE_088_ANALYSIS.md](REFERENCE_088_ANALYSIS.md). Đã chuẩn bị 8 cấu hình full fine-tuning và công cụ hiệu chỉnh ngưỡng trên tune; đây là các lượt chưa huấn luyện, không cộng vào 46 kết quả đã đo dưới đây.
 

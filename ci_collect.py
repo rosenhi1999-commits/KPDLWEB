@@ -13,9 +13,11 @@ from calibrate_reference import load_partition,best_cut
 from score_absa import report
 
 ROOT=Path(__file__).resolve().parent
-SAFE_FILES=['config.json','metrics.json','history.csv','run_info.json','progress.json','ci_provenance.json']
+SAFE_FILES=['config.json','metrics.json','history.csv','run_info.json','progress.json','ci_provenance.json','selection_provenance.json']
 
 def comparable_tune_score(path,metrics):
+    if metrics.get('refit_scope')=='outer80':
+        return float(metrics['selection_tune_F1'])
     # Older workers called the fixed-threshold epoch-selection score best_tune_F1.
     # Compare all candidates by tuned F1 at their already-selected checkpoint.
     history=pd.read_csv(path/'history.csv')
@@ -28,6 +30,8 @@ def design(sources,j,mode):
     return np.concatenate([np.log(np.clip(s[:,idx],1e-5,1-1e-5)/(1-np.clip(s[:,idx],1e-5,1-1e-5))) for s in sources],axis=1)
 
 def stack(trials,train):
+    number=max([0]+[int(p.name.removeprefix('Stacking_lan')) for p in ROOT.glob('Stacking_lan*') if p.is_dir() and p.name.removeprefix('Stacking_lan').isdigit()])+1
+    name=f'Stacking_lan{number}'
     _,tu,va=reference_splits(train);y=train[LABELS].to_numpy(int);tune=[];validation=[]
     for _,path,_ in trials:
         _,t=load_partition(path/'tune_scores.npz',train,'tune');_,v=load_partition(path/'validation_scores.npz',train,'validation')
@@ -50,10 +54,11 @@ def stack(trials,train):
         models.append(model);thresholds.append(cut);labels.append({'label':label,'mode':mode,'C':c,'threshold':cut,'meta_OOF_F1':f1})
     pred=binary_predictions(scores,np.asarray(thresholds));gt=train.iloc[va][['id']+LABELS].reset_index(drop=True)
     sb=pd.DataFrame(pred,columns=LABELS);sb.insert(0,'id',gt.id)
-    r=report(gt,sb,n_boot=1000);r.update(experiment='Stacking_lan2',split_policy='reference_group_2026',
+    r=report(gt,sb,n_boot=1000);r.update(experiment=name,split_policy='reference_group_2026',
         blind_file_read=False,validation_previously_seen=True,base_encoders_fine_tuned=True,fully_nested_encoder_cv=False)
-    folder=ROOT/'Stacking_lan2';folder.mkdir(exist_ok=False)
+    folder=ROOT/name;folder.mkdir(exist_ok=False)
     cfg={'sources':[n for n,_,_ in trials],'labels':labels,'seed':2026,'split_policy':'reference_group_2026',
+        'source_tune_provenance':{n:m.get('tune_scores_origin','same_selection_encoder_out_of_fit') for n,_,m in trials},
         'selection':'meta C, feature mode and thresholds selected on tune OOF only','blind_file_read':False}
     (folder/'config.json').write_text(json.dumps(cfg,indent=2));(folder/'metrics.json').write_text(json.dumps(r,indent=2))
     private=ROOT/'ci_meta';private.mkdir(exist_ok=True)
@@ -67,7 +72,7 @@ if __name__=='__main__':
     trials=[];files=[]
     for path in sorted(a.artifacts.glob('absa-*-metrics')):
         name=path.name.removeprefix('absa-').removesuffix('-metrics')
-        if not re.fullmatch(r'PhoBERT_lan\d+',name) or not (path/'metrics.json').exists():continue
+        if not re.fullmatch(r'(?:PhoBERT|ViSoBERT)_lan\d+',name) or not (path/'metrics.json').exists():continue
         m=json.loads((path/'metrics.json').read_text())
         if m['train_sha256']!=train_hash:raise ValueError('Training data changed: cannot combine source scores')
         load_partition(path/'tune_scores.npz',train,'tune');load_partition(path/'validation_scores.npz',train,'validation')
@@ -75,21 +80,35 @@ if __name__=='__main__':
         for f in SAFE_FILES:
             if (path/f).exists():shutil.copy2(path/f,folder/f);files.append(f'{name}/{f}')
         trials.append((name,path,m))
-    winner=max(trials,key=lambda t:comparable_tune_score(t[1],t[2])) if trials else None
+    winner=max(trials,key=lambda t:(comparable_tune_score(t[1],t[2]),t[2].get('fit_rows',2812))) if trials else None
     stacked=None
     if len(trials)>=2:stacked,extra=stack(trials,train);files+=extra
-    rows=[{'experiment':n,'selected_checkpoint_tuned_F1':comparable_tune_score(path,m),'ABSA_F1':m['ABSA_F1'],'epochs_completed':m['epochs_completed']} for n,path,m in trials]
-    if stacked:rows.append({'experiment':'Stacking_lan2','ABSA_F1':stacked['ABSA_F1']})
+    rows=[{'experiment':n,'selected_checkpoint_tuned_F1':comparable_tune_score(path,m),'tune_score_origin':m.get('tune_scores_origin','same_selection_encoder_out_of_fit'),'ABSA_F1':m['ABSA_F1'],'epochs_completed':m['epochs_completed']} for n,path,m in trials]
+    if stacked:rows.append({'experiment':stacked['experiment'],'ABSA_F1':stacked['ABSA_F1']})
     pd.DataFrame(rows).to_csv(ROOT/'ci_training_comparison.csv',index=False);files.append('ci_training_comparison.csv')
-    selection={'selected_encoder':winner[0] if winner else None,'selected_by':'tuned F1 at the selected checkpoint, never outer validation',
+    current_id=os.environ.get('GITHUB_RUN_ID')
+    current=sum(json.loads((path/'ci_provenance.json').read_text()).get('github_run_id')==current_id for _,path,_ in trials)
+    selection={'selected_encoder':winner[0] if winner else None,'selected_by':'selection-source tuned F1; ties prefer more fit rows, never outer validation',
         'completed_encoder_trials':len(trials),'github_run_id':os.environ.get('GITHUB_RUN_ID'),
-        'blind_file_read':False,'stacking_ABSA_F1':stacked['ABSA_F1'] if stacked else None}
+        'current_run_completed':current,'carried_forward_sources':len(trials)-current,
+        'blind_file_read':False,'stacking_ABSA_F1':stacked['ABSA_F1'] if stacked else None,'stacking_experiment':stacked['experiment'] if stacked else None}
     (ROOT/'ci_selected_run.json').write_text(json.dumps(selection,indent=2));files.append('ci_selected_run.json')
-    text='# Automatic train-only fine-tuning results\n\n'+f'Completed encoder trials: {len(trials)} / 8.\n\n'
+    text='# Automatic train-only fine-tuning results\n\n'+f'Completed encoder sources: {len(trials)}; current run: {current}; carried forward: {len(trials)-current}.\n\n'
     for row in rows:text+=f"- {row['experiment']}: validation ABSA-F1 {row['ABSA_F1']:.6f}.\n"
     text+='\nValidation has been seen during development. No blind data was opened. Sources selected checkpoints on tune; meta CV is not fully nested encoder CV.\n'
+    text+='\nFor an outer80 refit, tune probabilities and recipe-selection F1 come from the original pre-refit model, never the refitted model predicting its own training rows. Validation scores come from the refit model; their probability distribution may shift.\n'
     text+='\nOriginal FP32 checkpoints are cached by this workflow for retrieval; the selected encoder is packaged separately and re-evaluated after FP16 storage conversion.\n'
     (ROOT/'CI_TRAINING_REPORT.md').write_text(text);files.append('CI_TRAINING_REPORT.md')
+    measured=[]
+    for path in sorted(ROOT.glob('*/metrics.json')):
+        m=json.loads(path.read_text());policy=m.get('split_policy','legacy_random42')
+        if path.parent.name=='Ensemble_lan2':policy='reference_group_2026'
+        ci=m.get('ABSA_F1_CI95',[None,None])
+        measured.append({'experiment':path.parent.name,'split_policy':policy,'ABSA_F1':m['ABSA_F1'],
+            'CI95_low':ci[0],'CI95_high':ci[1]})
+    comparison=pd.DataFrame(measured);comparison.to_csv(ROOT/'all_experiments.csv',index=False)
+    comparison[comparison.split_policy=='reference_group_2026'].sort_values('ABSA_F1',ascending=False).to_csv(ROOT/'train_only_comparison.csv',index=False)
+    files+=['all_experiments.csv','train_only_comparison.csv']
     output=os.environ.get('GITHUB_OUTPUT')
     if output:
         with open(output,'a') as f:f.write('selected='+ (winner[0] if winner else '')+'\n')

@@ -1,0 +1,56 @@
+{
+  "selected_method": "shrink25",
+  "stage": "encoder",
+  "thresholds": {
+    "nhan_vien_nhac": 0.15172557099864342,
+    "nhan_vien_khen": 0.4680047806065816,
+    "nhan_vien_che": 0.5992088587702932,
+    "sach_se_nhac": 0.2983546685792652,
+    "sach_se_khen": 0.6911914957330583,
+    "sach_se_che": 0.7772773949899405,
+    "vi_tri_nhac": 0.38450013649660153,
+    "vi_tri_khen": 0.7672107836041288,
+    "vi_tri_che": 0.6349068408211072,
+    "phong_nhac": 0.4943823091574569,
+    "phong_khen": 0.7743930475550064,
+    "phong_che": 0.5327681272194303,
+    "gia_tri_nhac": 0.7997185105834502,
+    "gia_tri_khen": 0.7705514671133576,
+    "gia_tri_che": 0.49800426644437457,
+    "an_uong_nhac": 0.6832682887713115,
+    "an_uong_khen": 0.6654892481711446,
+    "an_uong_che": 0.7746520206218458,
+    "tien_nghi_nhac": 0.5212839945411006,
+    "tien_nghi_khen": 0.6630429135271783,
+    "tien_nghi_che": 0.6287589207390286
+  },
+  "selection": "5-fold held-out calibration on train-derived tune only",
+  "rows": 938,
+  "not_an_outer_validation_or_public_score": true,
+  "encoder_may_have_selected_checkpoint_on_tune": true,
+  "blind_file_read": false,
+  "candidate_results": [
+    {
+      "method": "fixed",
+      "tune_OOF_ABSA_F1": 0.8479370176336463
+    },
+    {
+      "method": "reference_grid",
+      "tune_OOF_ABSA_F1": 0.8553185430754076
+    },
+    {
+      "method": "exact_pr",
+      "tune_OOF_ABSA_F1": 0.8516892624010894
+    },
+    {
+      "method": "shrink25",
+      "tune_OOF_ABSA_F1": 0.8557424324466171
+    },
+    {
+      "method": "shrink75",
+      "tune_OOF_ABSA_F1": 0.8539386605498708
+    }
+  ],
+  "train_sha256": "665b581d11c5cb59eb5b3e6e730660fdd28567c64392f2e288e375dd082bd95e",
+  "tune_scores_sha256": "1b6353a1fbd7510e400a9433a5ce44d6fd40e62bac612e60e4568a625ade96b4"
+}

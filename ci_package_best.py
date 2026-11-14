@@ -20,7 +20,7 @@ if __name__=='__main__':
     model=ReviewModel(cfg['model_name'],cfg['revision'],cfg.get('head','joint'),cfg.get('unfreeze_layers',-1),cfg.get('dropout',.2))
     model.load_state_dict(compact);del compact
     model.autocast_cpu_bf16=cfg.get('cpu_bf16',False)
-    tok=AutoTokenizer.from_pretrained(cfg['model_name'],revision=cfg['revision'],use_fast=False)
+    tok=AutoTokenizer.from_pretrained(cfg['model_name'],revision=cfg['revision'],use_fast=cfg.get('fast_tokenizer',False))
     train=pd.read_csv(ROOT/'train.csv');_,_,valid=reference_splits(train,cfg.get('split_seed',2026))
     y=train[LABELS].to_numpy(int);ds=Reviews(train.text.iloc[valid],y[valid],tok,cfg['segment'],cfg['max_length'],cfg['stride'])
     logits=infer(model,batches(ds,tok,cfg['batch_size']),torch.device('cpu'))
@@ -31,7 +31,7 @@ if __name__=='__main__':
     (a.out/'metrics_after_storage_rounding.json').write_text(json.dumps(metrics,indent=2))
     cfg.update(checkpoint_file='model.fp16.pt',checkpoint_storage_dtype='float16',compute_weight_dtype='float32')
     (a.out/'config.json').write_text(json.dumps(cfg,indent=2))
-    for name in ['run_info.json','ci_provenance.json']:
+    for name in ['run_info.json','ci_provenance.json','selection_provenance.json']:
         if (a.metadata/name).exists():shutil.copy2(a.metadata/name,a.out/name)
     (a.out/'README.txt').write_text('Train-only selected encoder checkpoint. Load into ReviewModel as float32; thresholds in config are probabilities. See metrics_after_storage_rounding.json. No blind predictions or original data included. Model is selection fit, not an all-train production refit.\n')
     print(json.dumps({'packaged_ABSA_F1':metrics['ABSA_F1'],'checkpoint_bytes':(a.out/'model.fp16.pt').stat().st_size,'blind_file_read':False}),flush=True)

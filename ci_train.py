@@ -5,11 +5,11 @@ import argparse,hashlib,json,os,re,shutil,subprocess,sys
 
 ROOT=Path(__file__).resolve().parent
 PUBLIC_FILES=['config.json','metrics.json','history.csv','run_info.json','progress.json',
-              'tune_scores.npz','validation_scores.npz','ci_provenance.json']
+              'tune_scores.npz','validation_scores.npz','ci_provenance.json','selection_provenance.json']
 
 if __name__=='__main__':
     ap=argparse.ArgumentParser();ap.add_argument('--source',required=True);ap.add_argument('--target',required=True);a=ap.parse_args()
-    if not re.fullmatch(r'PhoBERT_lan\d+',a.source) or not re.fullmatch(r'PhoBERT_lan\d+',a.target):raise ValueError('Invalid experiment name')
+    if not re.fullmatch(r'(?:PhoBERT|ViSoBERT)_lan\d+',a.source) or not re.fullmatch(r'(?:PhoBERT|ViSoBERT)_lan\d+',a.target):raise ValueError('Invalid experiment name')
     folder=ROOT/'private_ci_runs'/a.target;folder.mkdir(parents=True,exist_ok=False)
     cfg=json.loads((ROOT/a.source/'config.json').read_text())
     flags=Path('/proc/cpuinfo').read_text() if Path('/proc/cpuinfo').exists() else ''
@@ -27,8 +27,10 @@ if __name__=='__main__':
         'cpu_bf16':cfg['cpu_bf16'],'epochs_requested':cfg['epochs'],'full_encoder_trainable':True}),flush=True)
     result=None
     try:
-        result=subprocess.run([sys.executable,str(ROOT/'neural_train.py'),'--config',str(folder/'config.json'),
-            '--train',str(ROOT/'train.csv')],check=False)
+        command=[sys.executable,str(ROOT/('ci_refit_outer.py' if cfg.get('training_mode')=='refit_outer80' else 'neural_train.py')),
+            '--config',str(folder/'config.json'),'--train',str(ROOT/'train.csv')]
+        if cfg.get('training_mode')=='refit_outer80':command+=['--selection-dir',str(ROOT/'selection_reference')]
+        result=subprocess.run(command,check=False)
     finally:
         public=ROOT/'public_results'/a.target;public.mkdir(parents=True,exist_ok=True)
         for name in PUBLIC_FILES:
