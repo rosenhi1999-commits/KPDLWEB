@@ -11,5 +11,11 @@ PhoBERT_lan19,0.881969278711729,same_selection_encoder_out_of_fit,0.879530999771
 PhoBERT_lan20,0.891547031073395,same_selection_encoder_out_of_fit,0.8905953814394448,12.0
 PhoBERT_lan21,0.5239857005639665,same_selection_encoder_out_of_fit,0.5081943994995987,7.0
 PhoBERT_lan22,0.8638643846949651,pre_refit_selection_encoder_out_of_fit,0.8506149816418836,6.0
+PhoBERT_lan23,0.8940674791740492,same_selection_encoder_out_of_fit,0.8872533027547381,12.0
+PhoBERT_lan24,0.890670423392228,same_selection_encoder_out_of_fit,0.8983832798082195,12.0
+PhoBERT_lan25,0.8946002203773765,same_selection_encoder_out_of_fit,0.8936406022418859,11.0
+PhoBERT_lan26,0.8942925964458714,same_selection_encoder_out_of_fit,0.8886222439731092,12.0
+PhoBERT_lan27,0.8923439450674271,same_selection_encoder_out_of_fit,0.8871391956763084,12.0
 ViSoBERT_lan2,0.8527487818922028,same_selection_encoder_out_of_fit,0.8482978949879445,10.0
-Stacking_lan3,,,0.8726591996948133,
+Stacking_lan4,,,0.8852983986699015,
+Blending_lan3,,,0.8936406022418859,

@@ -1,11 +1,20 @@
 {
-  "selected_encoder": "PhoBERT_lan20",
+  "selected_encoder": "PhoBERT_lan25",
   "selected_by": "selection-source tuned F1; ties prefer more fit rows, never outer validation",
-  "completed_encoder_trials": 13,
-  "github_run_id": "43614693254",
+  "completed_encoder_trials": 18,
+  "github_run_id": "43701826710",
   "current_run_completed": 5,
-  "carried_forward_sources": 8,
+  "carried_forward_sources": 13,
   "blind_file_read": false,
-  "stacking_ABSA_F1": 0.8726591996948133,
-  "stacking_experiment": "Stacking_lan3"
+  "stacking_ABSA_F1": 0.8852983986699015,
+  "stacking_experiment": "Stacking_lan4",
+  "blending_ABSA_F1": 0.8936406022418859,
+  "blending_experiment": "Blending_lan3",
+  "best_observed_validation_reporting_only": {
+    "experiment": "PhoBERT_lan24",
+    "selected_checkpoint_tuned_F1": 0.890670423392228,
+    "tune_score_origin": "same_selection_encoder_out_of_fit",
+    "ABSA_F1": 0.8983832798082195,
+    "epochs_completed": 12
+  }
 }
