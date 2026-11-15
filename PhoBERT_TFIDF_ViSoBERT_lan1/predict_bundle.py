@@ -1,4 +1,4 @@
-"""Checkpoint inference only. Never fits or changes thresholds using test text."""
+"""Validation checkpoint replay. Uses fixed learned weights and thresholds."""
 import os
 os.environ.setdefault('USE_TF', '0')
 os.environ.setdefault('USE_FLAX', '0')
@@ -65,7 +65,7 @@ class Predictor:
             weights = np.asarray(self.cfg['weights'], dtype=float)
             assert len(weights) == 3 and np.all(weights >= .1 - 1e-10)
             assert abs(weights.sum() - 1) < 1e-10
-        elif self.kind == 'tfidf_dual_text':
+        elif self.kind in ['tfidf_dual_text', 'tfidf_word_char_logistic']:
             import joblib
             self.model = joblib.load(self.folder / 'model.joblib')
         elif self.kind == 'joint_21' and self.cfg.get('head', 'joint') == 'joint':
@@ -89,12 +89,19 @@ class Predictor:
         if self.sources is not None:
             return sum(w * s.probabilities(texts)
                        for w, s in zip(self.cfg['weights'], self.sources))
+        if self.kind == 'tfidf_word_char_logistic':
+            from text_normalization import normalize_text
+            x = self.model['vectorizer'].transform([normalize_text(t).lower() for t in texts])
+            return self.model['model'].predict_proba(x)
         if self.kind == 'tfidf_dual_text':
             from colab_runner import text_views, transform_views
             views = text_views(texts)
             x = transform_views(self.model['vectorizers'], views, range(len(texts)))
             return self.model['classifier'].predict_proba(x)
-        if self.cfg.get('expand_abbreviations', False):
+        if self.cfg.get('normalization') == 'text_normalization.normalize_text':
+            from text_normalization import normalize_text
+            cleaner = normalize_text
+        elif self.cfg.get('expand_abbreviations', False):
             from colab_runner import normalize_text
             cleaner = normalize_text
         elif self.cfg.get('preprocessing_mode') == 'basic_social':
@@ -142,25 +149,3 @@ class Predictor:
         frame.insert(0, 'id', np.asarray(ids, dtype=str))
         return frame
 
-
-def write_submission(engine, test_path, demo_path, output):
-    test = pd.read_csv(test_path, dtype={'id': str}, keep_default_na=False)
-    demo = pd.read_csv(demo_path, dtype=str, keep_default_na=False)
-    assert list(test.columns) == ['id', 'text'], 'Test must contain id,text only'
-    assert list(demo.columns) == ['id'] + LABELS, 'Template column order differs'
-    assert len(test) == len(demo) == 732, 'Official submission requires 732 data rows'
-    assert test.id.is_unique and demo.id.is_unique
-    assert test.id.ne('').all() and test.text.ne('').all()
-    assert set(test.id) == set(demo.id), 'Test IDs do not match the official demo'
-    scores = engine.probabilities(test.text)
-    frame = engine.frame(test.id, scores)
-    frame = frame.set_index('id').loc[demo.id].reset_index()
-    frame.to_csv(output, index=False, encoding='utf-8', lineterminator='\n')
-    saved = pd.read_csv(output, dtype=str, keep_default_na=False)
-    assert list(saved.columns) == list(demo.columns)
-    assert saved.id.tolist() == demo.id.tolist() and saved.id.is_unique
-    assert saved[LABELS].isin(['0', '1']).all().all()
-    import score_absa
-    assert score_absa.kiem_tra(output, test_path) == 0
-    print('Submission SHA256:', file_hash(output), flush=True)
-    return frame
