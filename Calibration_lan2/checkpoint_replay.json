@@ -1,0 +1,23 @@
+{
+  "experiment": "PhoBERT_lan20",
+  "source_run_id": "43614693254",
+  "checkpoint_sha256": "0fd3b96db4d31fa85d522b50b5e992286efe839613f0f632cb637d9e76a68496",
+  "checkpoint_storage_dtype": "float16",
+  "compute_weight_dtype": "float32",
+  "cpu_bf16": true,
+  "cpu_threads": 2,
+  "rows": 938,
+  "seconds": 53.16624051500003,
+  "original_threshold_ABSA_F1": 0.8911244837574203,
+  "original_packaged_ABSA_F1": 0.8911033279808933,
+  "original_threshold_replay_matches": false,
+  "calibrated_checkpoint_ABSA_F1": 0.8918231390811565,
+  "calibrated_CI95": [
+    0.8794905362681565,
+    0.9043823919374503
+  ],
+  "delta_ABSA_F1": 0.0006986553237362525,
+  "thresholds_selected_on": "tune OOF only",
+  "outer_validation_used_for_threshold_selection": false,
+  "blind_file_read": false
+}

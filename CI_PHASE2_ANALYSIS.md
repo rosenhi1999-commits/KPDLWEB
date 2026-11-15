@@ -2,6 +2,10 @@
 
 Mô hình tốt nhất đã đo trên validation nhóm 2026 là PhoBERT_lan20, ABSA-F1 **0.8905953814**. F1 khen 0.933028, F1 chê 0.848163. Các nhãn yếu: vi_tri_che 0.775862, gia_tri_che 0.796460, tien_nghi_che 0.816901, tien_nghi_khen 0.844444. Chưa đạt 0.96; không coi đây là điểm hệ thống hay test độc lập.
 
+**Kiểm tra bổ sung:** Calibration_lan2 chọn shrink25 bằng tune OOF, đạt 0.891940607 từ cache xác suất FP32 của lan20. Đã tải checkpoint đóng gói và chạy encoder lại thật trên CPU: ngưỡng cũ 0.891124484, ngưỡng mới **0.891823139**, tăng 0.000698655 trong cùng lượt replay. Artifact trước đó ghi 0.891103328 ở ngưỡng cũ; có chênh lệch số nhỏ giữa môi trường/đường tính, nên trường original_threshold_replay_matches được giữ false trong checkpoint_replay.json. Không tuyên bố tái hiện bit-for-bit hoặc chọn ngưỡng bằng validation. Các số từ cache và từ checkpoint float16 được báo riêng.
+
+Vòng 3 đã khởi chạy: https://github.com/rosenhi1999-commits/KPDLWEB/actions/runs/43701826710 . Các kết quả lượt mới chỉ được tính khi huấn luyện xong.
+
 ## Bằng chứng từ vòng trước
 
 Lan20: LR 3e-5, mention loss 0.5, head LR 5x, dropout head 0.2, 12 epoch tối đa. Checkpoint chọn bằng tune ở epoch 11, tune F1 0.891547. Epoch 12 không cải thiện; không tiếp tục tăng epoch một cách mặc định.
