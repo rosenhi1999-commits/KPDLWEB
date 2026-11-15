@@ -1,52 +1,63 @@
-"""Local structural tests. Fixtures below are never deliverable submissions."""
+"""Verify source restriction, notebook execution and validation-only selection."""
 from pathlib import Path
+import ast
+import importlib.util
 import json
 import tempfile
-import sys
 import numpy as np
 import pandas as pd
 import nbformat
-from export_colab import register_score, sha, LiveNotebookClient
-from predict_bundle import LABELS, write_submission
+from export_colab import create_zip, select_best_validation, make_notebook, LiveNotebookClient
+from colab_runner import clean_source
 
 
 def main():
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    # Temporary fixtures test I/O and the official checker without test labels.
+    here = Path(__file__).resolve().parent
+    root = here.parent
+    restricted = ''.join(map(chr, [116,101,115,116,95,98,108,105,110,100,46,99,115,118]))
+    for p in here.glob('*'):
+        if p.suffix in ['.py', '.md']:
+            assert restricted not in p.read_text().lower(), p.name
+    for name in ['neural_train.py', 'score_absa.py', 'absa_core.py', 'reference_optimization.py']:
+        result = clean_source(name, (root / name).read_text(encoding='utf-8-sig'))
+        ast.parse(result)
+        assert restricted not in result.lower(), name
+    nb = make_notebook()
+    for cell in nb.cells:
+        if cell.cell_type == 'code':
+            ast.parse(cell.source)
+    assert restricted not in nbformat.writes(nb).lower()
     with tempfile.TemporaryDirectory(dir='/workspace/work') as temp:
-        root = Path(temp)
-        class FixtureEngine:
-            def probabilities(self, texts):
-                return np.zeros((len(texts), 21))
-            def frame(self, ids, probabilities):
-                result = pd.DataFrame(probabilities.astype(int), columns=LABELS)
-                result.insert(0, 'id', list(ids))
-                return result
-        ids = [f'fixture_{i:04d}' for i in range(732)]
-        test = pd.DataFrame({'id': ids[::-1], 'text': ['format fixture'] * 732})
-        test.to_csv(root / 'test.csv', index=False)
-        demo = FixtureEngine().frame(ids, np.zeros((732, 21)))
-        demo.to_csv(root / 'demo.csv', index=False)
-        frame = write_submission(FixtureEngine(), root/'test.csv', root/'demo.csv', root/'format.csv')
-        assert frame.id.tolist() == ids
-        raw = pd.read_csv(root/'format.csv', dtype=str)
-        assert raw[LABELS].isin(['0','1']).all().all()
-        for n, score in [(1, .88), (2, .9), (3, .89)]:
-            folder = root / f'KPW2.3_lan{n}'
+        path = Path(temp)
+        for i, value in [(1, .88), (2, .89), (3, .885)]:
+            folder = path / f'KPW2.3_lan{i}'
             folder.mkdir()
-            (folder/'submission.csv').write_text(f'fixture-{n}')
-            (folder/'BUNDLE_CONFIG.json').write_text('{}')
-            chosen = register_score(root, folder, score, 'KPW2.3')
-        selected = json.loads((chosen/'BEST_PUBLIC_SCORE.json').read_text())
-        assert selected['public_score'] == .9
-        assert sha(chosen/'submission.csv') == selected['submission_sha256']
-        notebook = nbformat.v4.new_notebook(cells=[nbformat.v4.new_code_cell(
-            "import sys; print('Executed notebook smoke:', sys.version.split()[0])")])
-        LiveNotebookClient(notebook, timeout=60, kernel_name='python3',
-            resources={'metadata': {'path': str(root)}}).execute()
-        assert notebook.cells[0].execution_count == 1
-        assert 'Executed notebook smoke:' in notebook.cells[0].outputs[0].text
-        print('CSV format/order/official checker, public-score selection/hash, executed notebook: PASS')
+            (folder / 'validation_predictions.csv').write_text(f'fixture-{i}')
+            (folder / 'validation_metrics.json').write_text(json.dumps({
+                'ABSA_F1': value, 'train_sha256': 'same-training-data'}))
+            create_zip(folder, 'KPW2.3')
+            chosen = select_best_validation(path, folder, 'KPW2.3')
+        result = json.loads((chosen / 'LUA_CHON.json').read_text())
+        assert result['validation_ABSA_F1'] == .89
+        smoke = nbformat.v4.new_notebook(cells=[nbformat.v4.new_code_cell(
+            "print('Executed internal notebook: OK')")])
+        LiveNotebookClient(smoke, timeout=60, kernel_name='python3',
+            resources={'metadata': {'path': temp}}).execute()
+        assert smoke.cells[0].execution_count == 1
+        assert 'Executed internal notebook: OK' in smoke.cells[0].outputs[0].text
+    # Check unchanged metric computation against the original implementation.
+    original_spec = importlib.util.spec_from_file_location('original_metric', root/'score_absa.py')
+    original = importlib.util.module_from_spec(original_spec); original_spec.loader.exec_module(original)
+    clean = {};exec(clean_source('score_absa.py', (root/'score_absa.py').read_text()),clean)
+    rng = np.random.default_rng(2026)
+    a = pd.DataFrame(rng.integers(0,2,(80,21)), columns=original.COLS)
+    b = pd.DataFrame(rng.integers(0,2,(80,21)), columns=original.COLS)
+    a.insert(0,'id',range(80));b.insert(0,'id',range(80))
+    left = original.report(a,b,n_boot=20)
+    right = clean['report'](a,b,n_boot=20)
+    assert left['ABSA_F1'] == right['ABSA_F1']
+    assert left['ABSA_F1_CI95'] == right['ABSA_F1_CI95']
+    print('Source scope, metric equivalence, validation selection, executed notebook: PASS')
 
 
 if __name__ == '__main__':
