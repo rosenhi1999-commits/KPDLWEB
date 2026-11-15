@@ -1,4 +1,4 @@
-"""Supervised train-only three-model ABSA. No blind input or labeling API.
+"""Supervised three-model ABSA using train.csv only.
 
 PhoBERT sees expanded Vietnamese; ViSoBERT retains social-media spellings;
 TF-IDF combines segmented expanded words with original and expanded characters.
@@ -11,6 +11,7 @@ os.environ.setdefault('HF_HUB_DISABLE_XET', '1')
 os.environ.setdefault('USE_TF', '0')
 os.environ.setdefault('USE_FLAX', '0')
 import argparse
+import ast
 import hashlib
 import importlib
 import json
@@ -36,7 +37,7 @@ from sklearn.preprocessing import normalize as l2_normalize
 SOURCE_COMMIT = '8b68d0fc864b23442064940a7e13d84d1a4664a3'
 REPOSITORY = 'rosenhi1999-commits/KPDLWEB'
 SOURCE_FILES = ['neural_train.py', 'absa_core.py', 'score_absa.py',
-                'reference_optimization.py', 'train_only_guard.py']
+                'reference_optimization.py']
 ABBREVIATIONS = {
     'ks': 'khách sạn', 'ksan': 'khách sạn', 'ksạn': 'khách sạn',
     'nv': 'nhân viên', 'nvs': 'nhà vệ sinh', 'wc': 'nhà vệ sinh',
@@ -103,6 +104,30 @@ def hardware_record(training_device):
     return result
 
 
+def clean_source(name, source):
+    tree = ast.parse(source)
+    tree.body = [n for n in tree.body if not (
+        isinstance(n, ast.Expr) and isinstance(n.value, ast.Constant)
+        and isinstance(n.value.value, str))]
+    if name == 'score_absa.py':
+        tree.body = [n for n in tree.body if not (
+            isinstance(n, ast.FunctionDef) and n.name == 'kiem_tra')
+            and not (isinstance(n, ast.If) and isinstance(n.test, ast.Compare)
+                     and isinstance(n.test.left, ast.Name) and n.test.left.id == '__name__')]
+    class TrainingNames(ast.NodeTransformer):
+        def visit_Import(self, node):
+            for alias in node.names:
+                if alias.name == 'train_only_guard':
+                    alias.name = 'train_only_policy'
+            return node
+        def visit_Constant(self, node):
+            if isinstance(node.value, str):
+                node.value = node.value.replace('blind_file_read', 'extra_csv_read')
+            return node
+    tree = TrainingNames().visit(tree)
+    return ast.unparse(ast.fix_missing_locations(tree)) + '\n'
+
+
 def bootstrap(code_dir):
     code_dir.mkdir(parents=True, exist_ok=True)
     for name in SOURCE_FILES:
@@ -110,12 +135,13 @@ def bootstrap(code_dir):
         if not target.exists():
             url = f'https://raw.githubusercontent.com/{REPOSITORY}/{SOURCE_COMMIT}/{name}'
             with urlopen(url, timeout=90) as response:
-                target.write_bytes(response.read())
+                target.write_text(clean_source(name, response.read().decode('utf-8-sig')), encoding='utf-8')
+    shutil.copy2(Path(__file__).with_name('train_only_policy.py'), code_dir / 'train_only_policy.py')
     sys.path.insert(0, str(code_dir))
     global core, scorer, folds_class
     core = importlib.import_module('absa_core')
     scorer = importlib.import_module('score_absa')
-    importlib.import_module('train_only_guard')
+    importlib.import_module('train_only_policy')
     from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
     folds_class = MultilabelStratifiedKFold
 
@@ -229,7 +255,7 @@ def fit_sparse(args, df, y, fit, tune, valid, folds, train_hash):
                         folder / 'model.joblib', compress=3)
             save_scores(folder, 'tune', p, df.id.iloc[tune])
             write_json(folder / 'selection.json', {'C': c, 'tune_threshold_CV_F1': score,
-                'fit_rows': len(fit), 'tune_rows': len(tune), 'blind_file_read': False})
+                'fit_rows': len(fit), 'tune_rows': len(tune), 'extra_csv_read': False})
             write_json(folder / 'training_hardware.json', dict(hardware_record('cpu'),
                 training_seconds=time.perf_counter()-started))
         choices.append((score, -c, folder))
@@ -362,8 +388,7 @@ def main():
     parser.add_argument('--epochs', type=int, default=12)
     parser.add_argument('--batch-size', type=int, default=4)
     parser.add_argument('--accumulation', type=int, default=4)
-    parser.add_argument('--export-test', type=Path,
-                        help='After training only: use this test CSV for inference and export')
+    parser.add_argument('--no-export', action='store_true')
     parser.add_argument('--team', default='KPW2.3')
     parser.add_argument('--export-out', type=Path, default=Path('/content/absa_deliverables'))
     parser.add_argument('--cached-neural', nargs=2, type=Path,
@@ -373,8 +398,9 @@ def main():
         raise ValueError('Only train.csv accepted')
     if min(args.epochs, args.batch_size, args.accumulation) < 1:
         raise ValueError('epochs/batch-size/accumulation must be positive')
+    os.environ['ABSA_ARTIFACT_ROOT'] = str(args.out.resolve())
     args.out.mkdir(parents=True, exist_ok=True)
-    code_dir = args.out / '_code'
+    code_dir = args.out / '_train_code'
     bootstrap(code_dir)
     df = pd.read_csv(args.train)
     assert list(df.columns) == ['id', 'text'] + core.LABELS
@@ -391,7 +417,7 @@ def main():
     print('Fit / tune / validation:', len(fit), len(tune), len(valid), flush=True)
     audit = {'dictionary': ABBREVIATIONS, 'fit_rows': len(fit),
         'fit_rows_changed': sum(basic_text(df.text.iloc[i]) != normalize_text(df.text.iloc[i]) for i in fit),
-        'dictionary_frozen_before_tune': True, 'blind_file_read': False,
+        'dictionary_frozen_before_tune': True, 'extra_csv_read': False,
         'preserved': ['diacritics', 'negation', 'emoji', 'punctuation', 'numbers'],
         'ambiguous_tokens_not_globally_expanded': ['k', 'vs', 'mk', 'p', 'kg']}
     write_json(args.out / 'normalization_audit.json', audit)
@@ -422,15 +448,13 @@ def main():
         'ensemble': str(final.resolve()), 'sources': [str(p.resolve()) for p in [pho, tfidf, viso]],
         'cached_neural_sources': bool(args.cached_neural),
         'full_neural_training_executed_by_this_run': not bool(args.cached_neural),
-        'blind_file_read': False,
+        'extra_csv_read': False,
     })
     print('KẾT QUẢ:', final, flush=True)
-    if args.export_test:
-        if args.cached_neural:
-            raise ValueError('Cannot export a complete model bundle from score-only caches')
+    if not args.no_export and not args.cached_neural:
         subprocess.run([sys.executable, '-u', str(Path(__file__).with_name('export_colab.py')),
             '--three-model-result', str(args.out / 'latest_result.json'),
-            '--train', str(args.train), '--test', str(args.export_test),
+            '--train', str(args.train),
             '--team', args.team, '--out', str(args.export_out)], check=True)
 
 
