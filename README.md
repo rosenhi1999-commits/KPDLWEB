@@ -1,5 +1,7 @@
 # KPDLWEB — ABSA tiếng Việt
 
+**Kết quả mới nhất đã đo:** PhoBERT_lan20 đạt validation ABSA-F1 **0.890595**. [Vòng 3](CI_PHASE2_ANALYSIS.md) tiếp tục bằng seed/LR/dropout, R-Drop và attention head độc lập. Chưa đạt 0.96; các lượt đang chạy không được tính là kết quả hoàn thành.
+
 **Tự chạy trên GitHub:** [CI_AUTORUN.md](CI_AUTORUN.md) mô tả workflow full fine-tuning 8 cấu hình và tự tổng hợp/stacking. Kết quả mới chỉ được tính khi job huấn luyện hoàn tất; không dùng smoke test làm F1.
 
 Lượt đầu tiên đã hoàn tất thành công: [GitHub Actions run 43590132635](https://github.com/rosenhi1999-commits/KPDLWEB/actions/runs/43590132635). **Stacking_lan2 đạt validation ABSA-F1 0.860469**; encoder tốt nhất PhoBERT_lan14 đạt 0.854359. Xem [phân tích và vòng 2](CI_PHASE1_ANALYSIS.md). Chưa đạt 0.96.

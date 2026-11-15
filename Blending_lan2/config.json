@@ -1,0 +1,71 @@
+{
+  "weights": {
+    "PhoBERT_lan20": 1.0
+  },
+  "thresholds": {
+    "nhan_vien_nhac": 0.19999999999999998,
+    "nhan_vien_khen": 0.39999999999999997,
+    "nhan_vien_che": 0.5,
+    "sach_se_nhac": 0.6499999999999999,
+    "sach_se_khen": 0.5,
+    "sach_se_che": 0.75,
+    "vi_tri_nhac": 0.75,
+    "vi_tri_khen": 0.75,
+    "vi_tri_che": 0.39999999999999997,
+    "phong_nhac": 0.5,
+    "phong_khen": 0.44999999999999996,
+    "phong_che": 0.5499999999999999,
+    "gia_tri_nhac": 0.19999999999999998,
+    "gia_tri_khen": 0.5,
+    "gia_tri_che": 0.3,
+    "an_uong_nhac": 0.75,
+    "an_uong_khen": 0.75,
+    "an_uong_che": 0.39999999999999997,
+    "tien_nghi_nhac": 0.75,
+    "tien_nghi_khen": 0.25,
+    "tien_nghi_che": 0.5
+  },
+  "selection": "global weights selected by 5-fold tune OOF only, outer validation never used",
+  "selection_rule": "one_se",
+  "bootstrap_tune_OOF_standard_error": 0.007097642822002541,
+  "ranked_unique_sources": [
+    "PhoBERT_lan20",
+    "PhoBERT_lan19",
+    "PhoBERT_lan22",
+    "PhoBERT_lan16",
+    "ViSoBERT_lan2"
+  ],
+  "candidate_scores": [
+    {
+      "candidate": "anchor",
+      "tune_OOF_ABSA_F1": 0.8820726850436112,
+      "sources": 1
+    },
+    {
+      "candidate": "mean_top2",
+      "tune_OOF_ABSA_F1": 0.8809311574088162,
+      "sources": 2
+    },
+    {
+      "candidate": "mean_top3",
+      "tune_OOF_ABSA_F1": 0.876885203876265,
+      "sources": 3
+    },
+    {
+      "candidate": "mean_top5",
+      "tune_OOF_ABSA_F1": 0.884736200600331,
+      "sources": 5
+    },
+    {
+      "candidate": "anchor75",
+      "tune_OOF_ABSA_F1": 0.8842343035395419,
+      "sources": 2
+    },
+    {
+      "candidate": "anchor90",
+      "tune_OOF_ABSA_F1": 0.8834411492292243,
+      "sources": 2
+    }
+  ],
+  "blind_file_read": false
+}

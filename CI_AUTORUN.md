@@ -1,5 +1,7 @@
 # Tự chạy full fine-tuning trên GitHub Actions
 
+**Vòng 3:** matrix hiện là PhoBERT_lan23..27, bắt đầu từ cấu hình lan20 đạt 0.890595. Mang theo 13 nguồn của run 43590132635 và 43614693254, bổ sung blending tune OOF với quy tắc one-standard-error. Package lấy cache/artifact theo run ID gốc của nguồn thắng. Xem CI_PHASE2_ANALYSIS.md; các mô tả matrix cũ bên dưới là lịch sử.
+
 Workflow: `.github/workflows/train-absa.yml`. Việc thêm workflow vào main sẽ kích hoạt lượt chạy đầu tiên. Có thể chạy lại bằng Run workflow trong tab Actions; các kết quả cũ vẫn có provenance run ID riêng. Workflow không dùng GPU hoặc larger runner; dùng standard ubuntu-24.04. [GitHub xác nhận standard runner miễn phí trên repo public](https://docs.github.com/en/actions/concepts/billing-and-usage).
 
 **Cập nhật vòng 2:** vòng 1 đã hoàn tất 8 lượt, stacking đạt 0.860469. Matrix hiện chạy 5 lượt mới ở PhoBERT_lan19..22 và ViSoBERT_lan2, thêm label attention, ViSoBERT và refit outer80. Collector tải lại 8 nguồn cũ từ run 43590132635 và cấp thư mục stacking mới. Chi tiết trong CI_PHASE1_ANALYSIS.md; mô tả 8 cấu hình dưới đây là vòng 1.

@@ -3,7 +3,7 @@ from pathlib import Path
 import tempfile,json
 import numpy as np,pandas as pd,torch
 from torch import nn
-from reference_optimization import supervised_loss,positive_weights,optimizer_for
+from reference_optimization import supervised_loss,positive_weights,optimizer_for,symmetric_bernoulli_kl,training_objective
 from calibrate_reference import load_tune,fit_thresholds
 from absa_core import LABELS,reference_splits,binary_predictions
 from neural_train import ReviewBatchSampler
@@ -20,6 +20,19 @@ if __name__=='__main__':
     assert torch.allclose(old,new,atol=1e-7)
     a=torch.autograd.grad(old,logits,retain_graph=True)[0];b=torch.autograd.grad(new,logits)[0]
     assert torch.allclose(a,b,atol=1e-7)
+    first=torch.randn(3,21,requires_grad=True);second=torch.randn(3,21,requires_grad=True)
+    penalty=symmetric_bernoulli_kl(first,second)
+    assert penalty>=0 and torch.allclose(penalty,symmetric_bernoulli_kl(second,first))
+    assert symmetric_bernoulli_kl(first,first)==0
+    mention_only=first.detach().clone();mention_only[:,::3]+=2
+    assert symmetric_bernoulli_kl(first,mention_only)==0
+    penalty.backward();assert torch.isfinite(first.grad).all() and torch.isfinite(second.grad).all()
+    calls=[0];fixed=torch.randn(3,21,requires_grad=True)
+    def forward(inputs,counts):calls[0]+=1;return fixed
+    loss,_=training_objective(forward,{},[],labels,pw,{})
+    assert calls[0]==1 and torch.allclose(loss,supervised_loss(fixed,labels,pw,{}))
+    calls[0]=0;loss,_=training_objective(forward,{},[],labels,pw,{'rdrop_alpha':.5})
+    assert calls[0]==2 and torch.isfinite(loss)
     class Tiny(nn.Module):
         def __init__(self):
             super().__init__();self.encoder=nn.Module();self.encoder.encoder=nn.Module()
@@ -54,6 +67,7 @@ if __name__=='__main__':
         assert np.array_equal(binary_predictions(scores,thresholds),truth)
     result={'checks_passed':['default_loss_and_gradients_match_reference','default_positive_weight_matches_reference',
         'optimizer_lr_and_no_decay_groups','bucket_sampler_visits_every_review_once',
-        'tune_score_id_alignment','validation_scores_rejected_even_with_same_row_count','threshold_clean_separation'],
+        'tune_score_id_alignment','validation_scores_rejected_even_with_same_row_count','threshold_clean_separation',
+        'rdrop_symmetric_nonnegative_zero_for_identical_predictions','rdrop_excludes_auxiliary_mentions','rdrop_disabled_one_forward_enabled_two'],
         'full_finetuning_completed':False,'new_F1_claimed':False,'blind_file_read':False}
     (ROOT/'reference_optimization_checks.json').write_text(json.dumps(result,indent=2));print(json.dumps(result,indent=2))

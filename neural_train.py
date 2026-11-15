@@ -20,7 +20,7 @@ from transformers import AutoConfig,AutoModel,AutoTokenizer,get_cosine_schedule_
 from pyvi import ViTokenizer
 from absa_core import LABELS,reference_splits,binary_predictions,absa_f1
 from score_absa import report
-from reference_optimization import optimizer_for,positive_weights,supervised_loss
+from reference_optimization import optimizer_for,positive_weights,supervised_loss,training_objective
 
 def seed_all(seed):
     random.seed(seed);np.random.seed(seed);torch.manual_seed(seed)
@@ -61,9 +61,13 @@ class ReviewModel(nn.Module):
         hidden=cfg.hidden_size
         if head=='joint':
             self.head=nn.Sequential(nn.Dropout(dropout),nn.Linear(hidden,hidden),nn.Tanh(),nn.Dropout(dropout),nn.Linear(hidden,21))
-        else:
+        elif head in ['label_attention','label_attention_independent']:
             self.queries=nn.Parameter(torch.randn(7,hidden)*.02)
-            self.head=nn.Sequential(nn.Dropout(dropout),nn.Linear(hidden,3))
+            if head=='label_attention':self.head=nn.Sequential(nn.Dropout(dropout),nn.Linear(hidden,3))
+            else:
+                self.aspect_heads=nn.ModuleList([nn.Sequential(nn.Dropout(dropout),nn.Linear(hidden*2,hidden//2),
+                    nn.GELU(),nn.Dropout(dropout),nn.Linear(hidden//2,3)) for _ in range(7)])
+        else:raise ValueError('Unknown classification head')
         if unfreeze>=0:
             layers=self.encoder.encoder.layer
             if unfreeze>len(layers):raise ValueError('Too many unfreeze layers')
@@ -78,7 +82,10 @@ class ReviewModel(nn.Module):
             energy=torch.einsum('bth,ah->bat',hidden,self.queries)/math.sqrt(hidden.shape[-1])
             energy=energy.masked_fill(~inputs['attention_mask'].bool()[:,None,:],-1e4)
             pooled=torch.einsum('bat,bth->bah',energy.softmax(-1),hidden)
-            logits=self.head(pooled).reshape(-1,21)
+            if self.head_type=='label_attention':logits=self.head(pooled).reshape(-1,21)
+            else:
+                cls=hidden[:,0]
+                logits=torch.cat([head(torch.cat([pooled[:,i],cls],dim=1)) for i,head in enumerate(self.aspect_heads)],dim=1)
         # One review-level BCE target; never copy all labels to each window.
         return torch.stack([part.max(0).values for part in logits.split(counts)])
 
@@ -142,9 +149,9 @@ def main():
     loaders={n:batches(ds,tokenizer,cfg.get('batch_size',4),n=='fit',training_seed,cfg.get('length_bucketing',False)) for n,ds in datasets.items()}
     if args.smoke:
         inputs,counts,labels=next(iter(loaders['fit']));start=time.perf_counter()
-        logits=model({k:v.to(device) for k,v in inputs.items()},counts)
         pw=positive_weights(y[fit],cfg,device)
-        loss=supervised_loss(logits,labels.to(device),pw,cfg);loss.backward();opt.step()
+        loss,logits=training_objective(model,{k:v.to(device) for k,v in inputs.items()},counts,labels.to(device),pw,cfg)
+        loss.backward();opt.step()
         assert logits.shape==(len(labels),21) and torch.isfinite(loss)
         result={'smoke_passed':True,'device':str(device),'seconds':time.perf_counter()-start,'loss':float(loss.detach()),'note':'Not a validation F1 experiment','blind_file_read':False}
         (out/'smoke.json').write_text(json.dumps(result,indent=2));print(json.dumps(result));return
@@ -163,8 +170,7 @@ def main():
         for step,(inputs,counts,labels) in enumerate(loaders['fit']):
             with torch.autocast(device.type,dtype=torch.bfloat16 if device.type=='cpu' else torch.float16,
                     enabled=device.type=='cuda' or model.autocast_cpu_bf16):
-                logits=model({k:v.to(device) for k,v in inputs.items()},counts)
-                loss=supervised_loss(logits,labels.to(device),pw,cfg)
+                loss,logits=training_objective(model,{k:v.to(device) for k,v in inputs.items()},counts,labels.to(device),pw,cfg)
                 divisor=min(acc,len(loaders['fit'])-(step//acc)*acc)
             if not torch.isfinite(loss):raise FloatingPointError('Non-finite training loss')
             scaler.scale(loss/divisor).backward();total+=float(loss.detach())
@@ -207,7 +213,7 @@ def main():
         'blind_file_read':False,'production_refit':False,'validation_previously_seen':True})
     (out/'metrics.json').write_text(json.dumps(result,indent=2));pd.DataFrame(history).to_csv(out/'history.csv',index=False)
     cfg['status']='trained_validation_only'
-    cfg.update(columns=LABELS,architecture='joint_21' if cfg.get('head','joint')=='joint' else 'label_attention',production_refit=False)
+    cfg.update(columns=LABELS,architecture='joint_21' if cfg.get('head','joint')=='joint' else cfg['head'],production_refit=False)
     cfg['thresholds']=(1/(1+np.exp(-np.asarray(saved['thresholds'])))).tolist()
     cfg['threshold_space']='probability'
     args.config.write_text(json.dumps(cfg,indent=2))

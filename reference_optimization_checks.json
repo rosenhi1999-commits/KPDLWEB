@@ -6,7 +6,10 @@
     "bucket_sampler_visits_every_review_once",
     "tune_score_id_alignment",
     "validation_scores_rejected_even_with_same_row_count",
-    "threshold_clean_separation"
+    "threshold_clean_separation",
+    "rdrop_symmetric_nonnegative_zero_for_identical_predictions",
+    "rdrop_excludes_auxiliary_mentions",
+    "rdrop_disabled_one_forward_enabled_two"
   ],
   "full_finetuning_completed": false,
   "new_F1_claimed": false,

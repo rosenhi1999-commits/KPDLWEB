@@ -11,6 +11,7 @@ from sklearn.metrics import f1_score
 from absa_core import LABELS,reference_splits,binary_predictions
 from calibrate_reference import load_partition,best_cut
 from score_absa import report
+from ci_blend import blend
 
 ROOT=Path(__file__).resolve().parent
 SAFE_FILES=['config.json','metrics.json','history.csv','run_info.json','progress.json','ci_provenance.json','selection_provenance.json']
@@ -81,19 +82,25 @@ if __name__=='__main__':
             if (path/f).exists():shutil.copy2(path/f,folder/f);files.append(f'{name}/{f}')
         trials.append((name,path,m))
     winner=max(trials,key=lambda t:(comparable_tune_score(t[1],t[2]),t[2].get('fit_rows',2812))) if trials else None
-    stacked=None
+    stacked=None;blended=None
     if len(trials)>=2:stacked,extra=stack(trials,train);files+=extra
+    if trials:blended,extra=blend(trials,train);files+=extra
     rows=[{'experiment':n,'selected_checkpoint_tuned_F1':comparable_tune_score(path,m),'tune_score_origin':m.get('tune_scores_origin','same_selection_encoder_out_of_fit'),'ABSA_F1':m['ABSA_F1'],'epochs_completed':m['epochs_completed']} for n,path,m in trials]
     if stacked:rows.append({'experiment':stacked['experiment'],'ABSA_F1':stacked['ABSA_F1']})
+    if blended:rows.append({'experiment':blended['experiment'],'ABSA_F1':blended['ABSA_F1']})
+    best_observed=max(rows,key=lambda row:row['ABSA_F1']) if rows else None
     pd.DataFrame(rows).to_csv(ROOT/'ci_training_comparison.csv',index=False);files.append('ci_training_comparison.csv')
     current_id=os.environ.get('GITHUB_RUN_ID')
     current=sum(json.loads((path/'ci_provenance.json').read_text()).get('github_run_id')==current_id for _,path,_ in trials)
     selection={'selected_encoder':winner[0] if winner else None,'selected_by':'selection-source tuned F1; ties prefer more fit rows, never outer validation',
         'completed_encoder_trials':len(trials),'github_run_id':os.environ.get('GITHUB_RUN_ID'),
         'current_run_completed':current,'carried_forward_sources':len(trials)-current,
-        'blind_file_read':False,'stacking_ABSA_F1':stacked['ABSA_F1'] if stacked else None,'stacking_experiment':stacked['experiment'] if stacked else None}
+        'blind_file_read':False,'stacking_ABSA_F1':stacked['ABSA_F1'] if stacked else None,'stacking_experiment':stacked['experiment'] if stacked else None,
+        'blending_ABSA_F1':blended['ABSA_F1'] if blended else None,'blending_experiment':blended['experiment'] if blended else None}
+    selection['best_observed_validation_reporting_only']=best_observed
     (ROOT/'ci_selected_run.json').write_text(json.dumps(selection,indent=2));files.append('ci_selected_run.json')
     text='# Automatic train-only fine-tuning results\n\n'+f'Completed encoder sources: {len(trials)}; current run: {current}; carried forward: {len(trials)-current}.\n\n'
+    if best_observed:text+=f"Best observed validation result (reporting only, not checkpoint selection): {best_observed['experiment']} **{best_observed['ABSA_F1']:.6f}**.\n\n"
     for row in rows:text+=f"- {row['experiment']}: validation ABSA-F1 {row['ABSA_F1']:.6f}.\n"
     text+='\nValidation has been seen during development. No blind data was opened. Sources selected checkpoints on tune; meta CV is not fully nested encoder CV.\n'
     text+='\nFor an outer80 refit, tune probabilities and recipe-selection F1 come from the original pre-refit model, never the refitted model predicting its own training rows. Validation scores come from the refit model; their probability distribution may shift.\n'
@@ -111,7 +118,10 @@ if __name__=='__main__':
     files+=['all_experiments.csv','train_only_comparison.csv']
     output=os.environ.get('GITHUB_OUTPUT')
     if output:
-        with open(output,'a') as f:f.write('selected='+ (winner[0] if winner else '')+'\n')
+        with open(output,'a') as f:
+            f.write('selected='+ (winner[0] if winner else '')+'\n')
+            provenance=json.loads((winner[1]/'ci_provenance.json').read_text()) if winner else {}
+            f.write('selected_run_id='+str(provenance.get('github_run_id',''))+'\n')
     summary=os.environ.get('GITHUB_STEP_SUMMARY')
     if summary:
         with open(summary,'a') as f:f.write(text)

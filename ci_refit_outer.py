@@ -5,7 +5,7 @@ import argparse,hashlib,json,math,shutil,time
 import numpy as np,pandas as pd,torch
 from transformers import AutoTokenizer,get_cosine_schedule_with_warmup
 from neural_train import ReviewModel,Reviews,batches,infer,seed_all
-from reference_optimization import optimizer_for,positive_weights,supervised_loss
+from reference_optimization import optimizer_for,positive_weights,training_objective
 from absa_core import LABELS,reference_splits,binary_predictions
 from calibrate_reference import load_tune
 from score_absa import report
@@ -42,7 +42,7 @@ if __name__=='__main__':
         model.train();opt.zero_grad(set_to_none=True);total=0
         for step,(inputs,counts,labels) in enumerate(loader):
             with torch.autocast('cpu',dtype=torch.bfloat16,enabled=model.autocast_cpu_bf16):
-                logits=model(inputs,counts);loss=supervised_loss(logits,labels,pw,cfg)
+                loss,logits=training_objective(model,inputs,counts,labels,pw,cfg)
             if not torch.isfinite(loss):raise FloatingPointError('Non-finite refit loss')
             divisor=min(acc,len(loader)-(step//acc)*acc);(loss/divisor).backward();total+=float(loss.detach())
             if (step+1)%acc==0 or step+1==len(loader):

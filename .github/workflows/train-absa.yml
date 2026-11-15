@@ -34,11 +34,11 @@ jobs:
       max-parallel: 2
       matrix:
         include:
-          - {source: PhoBERT_lan19, target: PhoBERT_lan19, selection_artifact: ''}
-          - {source: PhoBERT_lan20, target: PhoBERT_lan20, selection_artifact: ''}
-          - {source: PhoBERT_lan21, target: PhoBERT_lan21, selection_artifact: ''}
-          - {source: ViSoBERT_lan2, target: ViSoBERT_lan2, selection_artifact: ''}
-          - {source: PhoBERT_lan22, target: PhoBERT_lan22, selection_artifact: absa-PhoBERT_lan14-metrics}
+          - {source: PhoBERT_lan23, target: PhoBERT_lan23, selection_artifact: ''}
+          - {source: PhoBERT_lan24, target: PhoBERT_lan24, selection_artifact: ''}
+          - {source: PhoBERT_lan25, target: PhoBERT_lan25, selection_artifact: ''}
+          - {source: PhoBERT_lan26, target: PhoBERT_lan26, selection_artifact: ''}
+          - {source: PhoBERT_lan27, target: PhoBERT_lan27, selection_artifact: ''}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -84,6 +84,7 @@ jobs:
       actions: read
     outputs:
       selected: ${{ steps.collect.outputs.selected }}
+      selected_run_id: ${{ steps.collect.outputs.selected_run_id }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -103,6 +104,13 @@ jobs:
           run-id: 43590132635
           github-token: ${{ github.token }}
           path: downloaded_metrics
+      - name: Carry forward the five second-round sources
+        uses: actions/download-artifact@v4
+        with:
+          pattern: absa-*-metrics
+          run-id: 43614693254
+          github-token: ${{ github.token }}
+          path: downloaded_metrics
       - name: Install evaluation dependencies
         run: python -m pip install numpy==2.3.5 pandas==2.2.3 scipy==1.17.0 scikit-learn==1.8.0 joblib==1.5.3 iterative-stratification==0.1.9
       - name: Fit meta model using tune only and publish measured results
@@ -114,6 +122,7 @@ jobs:
           name: absa-meta-and-comparison
           path: |
             ci_meta/
+            private_blending/
             ci_training_comparison.csv
             CI_TRAINING_REPORT.md
             ci_selected_run.json
@@ -134,11 +143,13 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: absa-${{ needs.collect.outputs.selected }}-metrics
+          run-id: ${{ needs.collect.outputs.selected_run_id }}
+          github-token: ${{ github.token }}
           path: package_metadata
       - uses: actions/cache/restore@v4
         with:
           path: private_ci_runs/${{ needs.collect.outputs.selected }}/model.pt
-          key: absa-trained-${{ github.run_id }}-${{ needs.collect.outputs.selected }}
+          key: absa-trained-${{ needs.collect.outputs.selected_run_id }}-${{ needs.collect.outputs.selected }}
           fail-on-cache-miss: true
       - name: Install CPU dependencies
         run: |

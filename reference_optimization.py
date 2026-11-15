@@ -35,3 +35,18 @@ def supervised_loss(logits,labels,pw,cfg):
     weights=torch.ones(21,device=logits.device);weights[::3]=mention
     # With default mention weight 1 this is the exact original mean BCE.
     return (loss*weights).sum()/weights.sum()/len(labels)
+
+def symmetric_bernoulli_kl(first,second):
+    a,b=first.float(),second.float()
+    polarity=[i for i in range(21) if i%3!=0]
+    # Half the sum of KL(Bernoulli(p)||Bernoulli(q)) and its reverse.
+    return (.5*(torch.sigmoid(a)-torch.sigmoid(b))*(a-b))[:,polarity].mean()
+
+def training_objective(model,inputs,counts,labels,pw,cfg):
+    first=model(inputs,counts);loss=supervised_loss(first,labels,pw,cfg)
+    strength=float(cfg.get('rdrop_alpha',0))
+    if strength<0:raise ValueError('rdrop_alpha must be nonnegative')
+    if strength:
+        second=model(inputs,counts)
+        loss=.5*(loss+supervised_loss(second,labels,pw,cfg))+strength*symmetric_bernoulli_kl(first,second)
+    return loss,first
